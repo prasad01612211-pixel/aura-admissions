@@ -19,19 +19,34 @@
 
 # production
 /build
+/dist
 
 # misc
 .DS_Store
 *.pem
+.dashboard.html
+
+# local data and imports
+/data/imported/current/
+/data/runtime/
+/data/imports/
 
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+.dev-*.log
+*.log
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+!.env.example
 
 # vercel
 .vercel

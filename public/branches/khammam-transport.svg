@@ -1,0 +1,9 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" rx="48" fill="#FDF2F8"/>
+  <rect x="94" y="110" width="1012" height="680" rx="40" fill="#9D174D"/>
+  <rect x="146" y="300" width="908" height="204" rx="48" fill="#F472B6"/>
+  <circle cx="286" cy="578" r="74" fill="#FDF2F8"/>
+  <circle cx="914" cy="578" r="74" fill="#FDF2F8"/>
+  <text x="164" y="732" fill="#FDF2F8" font-family="Arial, sans-serif" font-size="54" font-weight="700">Transport Bay & Pickup Support</text>
+  <text x="164" y="786" fill="#FBCFE8" font-family="Arial, sans-serif" font-size="30">Khammam branch demo asset</text>
+</svg>

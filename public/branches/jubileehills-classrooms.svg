@@ -1,0 +1,9 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" rx="48" fill="#DBEAFE"/>
+  <rect x="84" y="96" width="1032" height="708" rx="36" fill="#1E293B"/>
+  <rect x="132" y="158" width="284" height="488" rx="28" fill="#60A5FA"/>
+  <rect x="458" y="158" width="610" height="220" rx="28" fill="#BFDBFE"/>
+  <rect x="458" y="426" width="610" height="220" rx="28" fill="#93C5FD"/>
+  <text x="132" y="760" fill="#F8FAFC" font-family="Arial, sans-serif" font-size="50" font-weight="700">Jubilee Hills Classrooms</text>
+  <text x="132" y="820" fill="#DBEAFE" font-family="Arial, sans-serif" font-size="30">Academic environment placeholder</text>
+</svg>

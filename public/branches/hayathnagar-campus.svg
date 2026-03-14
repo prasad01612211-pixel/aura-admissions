@@ -1,0 +1,10 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" rx="48" fill="#ECFCCB"/>
+  <rect x="84" y="96" width="1032" height="708" rx="36" fill="#1F2937"/>
+  <rect x="132" y="158" width="936" height="186" rx="28" fill="#16A34A"/>
+  <rect x="132" y="394" width="284" height="288" rx="28" fill="#DCFCE7"/>
+  <rect x="458" y="394" width="284" height="288" rx="28" fill="#BBF7D0"/>
+  <rect x="784" y="394" width="284" height="288" rx="28" fill="#86EFAC"/>
+  <text x="132" y="760" fill="#F9FAFB" font-family="Arial, sans-serif" font-size="50" font-weight="700">Narayana Hayath Nagar</text>
+  <text x="132" y="820" fill="#BBF7D0" font-family="Arial, sans-serif" font-size="30">Campus proof - East Hyderabad</text>
+</svg>

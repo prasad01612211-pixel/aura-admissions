@@ -1,0 +1,10 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" rx="48" fill="#ECFEFF"/>
+  <rect x="90" y="102" width="1020" height="696" rx="40" fill="#164E63"/>
+  <circle cx="310" cy="330" r="132" fill="#67E8F9"/>
+  <circle cx="606" cy="330" r="132" fill="#22D3EE"/>
+  <circle cx="902" cy="330" r="132" fill="#06B6D4"/>
+  <rect x="170" y="560" width="860" height="110" rx="24" fill="#CFFAFE"/>
+  <text x="170" y="620" fill="#083344" font-family="Arial, sans-serif" font-size="46" font-weight="700">Science Labs & Foundation Classrooms</text>
+  <text x="170" y="752" fill="#ECFEFF" font-family="Arial, sans-serif" font-size="30">Kukatpally branch demo asset</text>
+</svg>

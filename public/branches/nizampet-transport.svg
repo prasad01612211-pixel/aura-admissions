@@ -1,0 +1,10 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" rx="48" fill="#F0FDFA"/>
+  <rect x="84" y="96" width="1032" height="708" rx="36" fill="#115E59"/>
+  <rect x="132" y="220" width="936" height="220" rx="40" fill="#14B8A6"/>
+  <rect x="180" y="500" width="220" height="120" rx="24" fill="#CCFBF1"/>
+  <rect x="450" y="500" width="220" height="120" rx="24" fill="#99F6E4"/>
+  <rect x="720" y="500" width="220" height="120" rx="24" fill="#5EEAD4"/>
+  <text x="132" y="760" fill="#FAFAFA" font-family="Arial, sans-serif" font-size="48" font-weight="700">Nizampet Transport</text>
+  <text x="132" y="820" fill="#99F6E4" font-family="Arial, sans-serif" font-size="30">Local route placeholder</text>
+</svg>

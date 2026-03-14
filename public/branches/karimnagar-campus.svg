@@ -1,0 +1,9 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" rx="48" fill="#FEF3C7"/>
+  <rect x="90" y="100" width="1020" height="700" rx="40" fill="#78350F"/>
+  <rect x="146" y="158" width="908" height="228" rx="28" fill="#D97706"/>
+  <rect x="146" y="432" width="426" height="286" rx="28" fill="#FDE68A"/>
+  <rect x="628" y="432" width="426" height="286" rx="28" fill="#FCD34D"/>
+  <text x="146" y="780" fill="#FFFBEB" font-family="Arial, sans-serif" font-size="56" font-weight="700">Karimnagar Merit Campus</text>
+  <text x="146" y="832" fill="#FDE68A" font-family="Arial, sans-serif" font-size="30">District merit and hostel mix</text>
+</svg>

@@ -1,0 +1,9 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" rx="48" fill="#F5F3FF"/>
+  <rect x="90" y="100" width="1020" height="700" rx="42" fill="#312E81"/>
+  <rect x="146" y="162" width="908" height="218" rx="28" fill="#8B5CF6"/>
+  <rect x="146" y="432" width="424" height="290" rx="28" fill="#DDD6FE"/>
+  <rect x="630" y="432" width="424" height="290" rx="28" fill="#C4B5FD"/>
+  <text x="146" y="780" fill="#F5F3FF" font-family="Arial, sans-serif" font-size="56" font-weight="700">Dilsukhnagar Residential Campus</text>
+  <text x="146" y="832" fill="#DDD6FE" font-family="Arial, sans-serif" font-size="30">Metro-connected residential branch</text>
+</svg>

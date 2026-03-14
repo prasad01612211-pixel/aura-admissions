@@ -1,0 +1,9 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" rx="48" fill="#F0FDF4"/>
+  <rect x="94" y="108" width="1012" height="684" rx="40" fill="#166534"/>
+  <circle cx="310" cy="338" r="132" fill="#4ADE80"/>
+  <circle cx="606" cy="338" r="132" fill="#22C55E"/>
+  <circle cx="902" cy="338" r="132" fill="#16A34A"/>
+  <text x="148" y="692" fill="#F0FDF4" font-family="Arial, sans-serif" font-size="54" font-weight="700">Student Lounge & Parent Waiting Area</text>
+  <text x="148" y="750" fill="#BBF7D0" font-family="Arial, sans-serif" font-size="30">Hanamkonda branch demo asset</text>
+</svg>
