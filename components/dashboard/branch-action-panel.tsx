@@ -19,7 +19,7 @@ export function BranchActionPanel({ branchId, leadId }: BranchActionPanelProps) 
 
   if (!leadId) {
     return (
-      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+      <div className="rounded-[1.35rem] border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
         Open this page with a `leadId` to log callback or visit requests into the funnel.
       </div>
     );
@@ -53,6 +53,9 @@ export function BranchActionPanel({ branchId, leadId }: BranchActionPanelProps) 
 
   return (
     <div className="space-y-3">
+      <div className="rounded-[1.35rem] border border-white/70 bg-white/72 p-4 text-sm leading-6 text-slate-600">
+        These actions write directly into the admissions workflow so counselors and ops see the request immediately.
+      </div>
       <div className="grid gap-3 lg:grid-cols-[0.8fr,1.2fr]">
         <Button
           type="button"
@@ -74,7 +77,7 @@ export function BranchActionPanel({ branchId, leadId }: BranchActionPanelProps) 
           <input
             value={preferredSlot}
             onChange={(event) => setPreferredSlot(event.target.value)}
-            className="h-11 min-w-[220px] rounded-full border border-slate-300 bg-white px-4 text-sm text-slate-900"
+            className="dashboard-input min-w-[220px]"
             placeholder="Preferred slot"
           />
           <Button
@@ -97,8 +100,8 @@ export function BranchActionPanel({ branchId, leadId }: BranchActionPanelProps) 
           </Button>
         </div>
       </div>
-      {message ? <div className="text-sm text-emerald-700">{message}</div> : null}
-      {error ? <div className="text-sm text-rose-600">{error}</div> : null}
+      {message ? <div className="rounded-[1.15rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</div> : null}
+      {error ? <div className="rounded-[1.15rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">{error}</div> : null}
     </div>
   );
 }

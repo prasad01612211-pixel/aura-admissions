@@ -30,6 +30,9 @@ export function PaymentAction({ paymentId, disabled }: { paymentId: string; disa
 
   return (
     <div className="space-y-3">
+      <div className="rounded-[1.35rem] border border-white/70 bg-white/70 p-4 text-sm leading-6 text-slate-600">
+        This project is still using the local payment stub. Use the action below to simulate a successful webhook and continue the workflow.
+      </div>
       <Button type="button" onClick={onClick} disabled={disabled || isSubmitting}>
         {isSubmitting ? "Confirming..." : "Mark seat lock as paid (local dev)"}
       </Button>

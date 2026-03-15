@@ -45,7 +45,7 @@ export function TaskBoard({ snapshot }: TaskBoardProps) {
         <select
           value={ownerFilter}
           onChange={(event) => setOwnerFilter(event.target.value)}
-          className="h-11 rounded-2xl border border-slate-300 bg-white px-4 text-sm text-slate-900"
+          className="dashboard-input"
         >
           <option value="">All owners</option>
           {(snapshot.users ?? []).map((user) => (
@@ -57,7 +57,7 @@ export function TaskBoard({ snapshot }: TaskBoardProps) {
         <select
           value={priorityFilter}
           onChange={(event) => setPriorityFilter(event.target.value as TaskPriority | "")}
-          className="h-11 rounded-2xl border border-slate-300 bg-white px-4 text-sm text-slate-900"
+          className="dashboard-input"
         >
           <option value="">All priorities</option>
           <option value="low">low</option>
@@ -68,7 +68,7 @@ export function TaskBoard({ snapshot }: TaskBoardProps) {
         <select
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value as TaskStatus | "")}
-          className="h-11 rounded-2xl border border-slate-300 bg-white px-4 text-sm text-slate-900"
+          className="dashboard-input"
         >
           <option value="">All statuses</option>
           <option value="open">open</option>
@@ -78,34 +78,34 @@ export function TaskBoard({ snapshot }: TaskBoardProps) {
         </select>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-[1.5rem] border border-white/70 bg-white/72 p-3">
         <table className="min-w-full text-left text-sm">
-          <thead className="text-slate-500">
+          <thead className="border-b border-slate-200/80 text-slate-500">
             <tr>
-              <th className="pb-3 font-medium">Lead</th>
-              <th className="pb-3 font-medium">Task</th>
-              <th className="pb-3 font-medium">Assignee</th>
-              <th className="pb-3 font-medium">Priority</th>
-              <th className="pb-3 font-medium">Due</th>
-              <th className="pb-3 font-medium">Actions</th>
+              <th className="pb-4 pt-1 font-medium">Lead</th>
+              <th className="pb-4 pt-1 font-medium">Task</th>
+              <th className="pb-4 pt-1 font-medium">Assignee</th>
+              <th className="pb-4 pt-1 font-medium">Priority</th>
+              <th className="pb-4 pt-1 font-medium">Due</th>
+              <th className="pb-4 pt-1 font-medium">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200">
+          <tbody className="divide-y divide-slate-200/80">
             {filteredItems.map((task) => (
-              <tr key={task.id}>
-                <td className="py-4">
-                  <div className="font-medium text-slate-950">{task.lead_name}</div>
-                  <div className="text-slate-500">{task.parent_phone ?? "No phone"}</div>
+              <tr key={task.id} className="align-top">
+                <td className="py-4 pr-4">
+                  <div className="font-semibold text-slate-950">{task.lead_name}</div>
+                  <div className="mt-1 text-slate-500">{task.parent_phone ?? "No phone"}</div>
                 </td>
-                <td className="py-4">
-                  <div className="font-medium text-slate-950">{task.title ?? task.task_type.replace(/_/g, " ")}</div>
+                <td className="py-4 pr-4">
+                  <div className="font-semibold text-slate-950">{task.title ?? task.task_type.replace(/_/g, " ")}</div>
                   <div className="mt-1 text-slate-500">{task.notes ?? task.description ?? "No notes"}</div>
                 </td>
-                <td className="py-4">
+                <td className="py-4 pr-4">
                   <select
                     value={task.assigned_to ?? ""}
                     onChange={(event) => patchTask(task.id, { assignedTo: event.target.value || null })}
-                    className="h-10 rounded-2xl border border-slate-300 bg-white px-3 text-sm text-slate-900"
+                    className="dashboard-input h-10"
                   >
                     <option value="">Unassigned</option>
                     {(snapshot.users ?? []).map((user) => (
@@ -115,8 +115,12 @@ export function TaskBoard({ snapshot }: TaskBoardProps) {
                     ))}
                   </select>
                 </td>
-                <td className="py-4 text-slate-600">{task.priority}</td>
-                <td className="py-4">
+                <td className="py-4 pr-4">
+                  <span className="inline-flex rounded-full border border-[rgba(179,132,67,0.22)] bg-[rgba(179,132,67,0.08)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-[rgb(120,83,34)]">
+                    {task.priority}
+                  </span>
+                </td>
+                <td className="py-4 pr-4">
                   <input
                     type="datetime-local"
                     defaultValue={task.due_at ? task.due_at.slice(0, 16) : ""}
@@ -125,7 +129,7 @@ export function TaskBoard({ snapshot }: TaskBoardProps) {
                         dueAt: event.target.value ? new Date(event.target.value).toISOString() : null,
                       })
                     }
-                    className="h-10 rounded-2xl border border-slate-300 bg-white px-3 text-sm text-slate-900"
+                    className="dashboard-input h-10"
                   />
                 </td>
                 <td className="py-4">

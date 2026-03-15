@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FileCheck2, Landmark, ShieldCheck, Wallet } from "lucide-react";
 import { notFound } from "next/navigation";
 
 import { AdmissionForm } from "@/components/admission/admission-form";
@@ -65,50 +66,86 @@ export default async function AdmissionPage({ params, searchParams }: PageProps)
     communicationSettings.default_seat_lock_amount;
 
   return (
-    <main className="min-h-screen bg-slate-50">
-      <div className="mx-auto max-w-6xl px-6 py-10 lg:px-8">
-        <div className="grid gap-6 xl:grid-cols-[1.05fr,0.95fr]">
-          <Card>
-            <CardHeader>
-              <CardDescription>Online admission flow</CardDescription>
-              <CardTitle>{getLeadDisplayName(workflow.lead.student_name, workflow.lead.parent_name)}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-wrap gap-2">
+    <main className="min-h-screen px-4 py-4 lg:px-6">
+      <div className="mx-auto max-w-[1680px] space-y-6">
+        <section className="overflow-hidden rounded-[2rem] border border-white/40 bg-[linear-gradient(135deg,rgba(8,22,36,0.97),rgba(18,53,70,0.94)_56%,rgba(16,93,88,0.82))] px-6 py-8 text-white shadow-[0_28px_90px_rgba(8,24,38,0.24)] lg:px-10 lg:py-10">
+          <div className="grid gap-8 xl:grid-cols-[1.08fr,0.92fr]">
+            <div>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="inline-flex rounded-full border border-white/12 bg-white/8 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.26em] text-[#e3c78f]">
+                  Online admission
+                </div>
+                <div className="inline-flex rounded-full border border-white/12 bg-white/8 px-4 py-2 text-sm text-slate-200">
+                  Parent-led form and seat-lock flow
+                </div>
+              </div>
+              <h1 className="mt-5 text-4xl font-semibold tracking-[-0.07em] text-white lg:text-5xl">
+                {getLeadDisplayName(workflow.lead.student_name, workflow.lead.parent_name)}
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-8 text-slate-200">
+                This flow is designed to keep families confident: clear branch context, a clean form, and a transparent payment step without confusion or duplicate follow-up.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-2">
                 <LeadStageBadge stage={workflow.lead.stage} />
                 <LeadStatusBadge status={workflow.lead.status} />
               </div>
-              <div className="grid gap-4 md:grid-cols-2 text-sm text-slate-600">
-                <div>
-                  <div className="text-slate-500">Branch</div>
-                  <div className="font-medium text-slate-950">{selectedBranch.name}</div>
-                </div>
-                <div>
-                  <div className="text-slate-500">Parent phone</div>
-                  <div className="font-medium text-slate-950">{workflow.lead.parent_phone ?? "Not captured"}</div>
-                </div>
-                <div>
-                  <div className="text-slate-500">Course</div>
-                  <div className="font-medium text-slate-950">{workflow.lead.course_interest ?? "Not captured"}</div>
-                </div>
-                <div>
-                  <div className="text-slate-500">Hostel</div>
-                  <div className="font-medium text-slate-950">{workflow.lead.hostel_required ? "Required" : "Not required"}</div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.08] p-5">
+                <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-300">Selected branch</div>
+                <div className="mt-3 text-2xl font-semibold tracking-[-0.05em] text-white">{selectedBranch.name}</div>
+                <div className="mt-2 text-sm leading-6 text-slate-300">
+                  {selectedBranch.city}, {selectedBranch.district}
                 </div>
               </div>
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.08] p-5">
+                <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-300">Seat lock</div>
+                <div className="mt-3 text-2xl font-semibold tracking-[-0.05em] text-white">{formatCurrency(seatLockAmount)}</div>
+                <div className="mt-2 text-sm leading-6 text-slate-300">Official payment step created after form submission.</div>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.08] p-5">
+                <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-300">Course interest</div>
+                <div className="mt-3 text-2xl font-semibold tracking-[-0.05em] text-white">{workflow.lead.course_interest ?? "Pending"}</div>
+                <div className="mt-2 text-sm leading-6 text-slate-300">Parent preference captured from the active lead record.</div>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.08] p-5">
+                <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-300">Hostel need</div>
+                <div className="mt-3 text-2xl font-semibold tracking-[-0.05em] text-white">
+                  {workflow.lead.hostel_required ? "Required" : "Not required"}
+                </div>
+                <div className="mt-2 text-sm leading-6 text-slate-300">Used to keep branch recommendations and payment context accurate.</div>
+              </div>
+            </div>
+          </div>
+        </section>
 
+        <section className="grid gap-6 xl:grid-cols-[1.04fr,0.96fr]">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="rounded-[1rem] border border-[rgba(15,118,110,0.15)] bg-[rgba(15,118,110,0.08)] p-2 text-teal-700">
+                  <FileCheck2 className="h-4 w-4" />
+                </div>
+                <div>
+                  <CardDescription>Admission form</CardDescription>
+                  <CardTitle>Student and parent details for branch intake</CardTitle>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
               {isSeatLocked ? (
-                <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5">
-                  <div className="text-sm font-medium text-emerald-800">Seat lock confirmed</div>
-                  <div className="mt-2 text-sm text-emerald-700">
-                    Payment is already confirmed. The admissions team can continue with document and branch follow-up.
+                <div className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 p-5">
+                  <div className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-800">Seat lock confirmed</div>
+                  <div className="mt-3 text-sm leading-7 text-emerald-700">
+                    Payment is already confirmed. The admissions team can continue with document review and branch follow-up.
                   </div>
                 </div>
               ) : pendingPayment ? (
-                <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5">
-                  <div className="text-sm font-medium text-amber-900">Form already submitted</div>
-                  <div className="mt-2 text-sm text-amber-800">
-                    Continue with the existing seat-lock payment instead of creating a duplicate.
+                <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-5">
+                  <div className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-900">Form already submitted</div>
+                  <div className="mt-3 text-sm leading-7 text-amber-800">
+                    Continue with the existing seat-lock payment instead of creating a duplicate step.
                   </div>
                   <Link href={`/payment/${pendingPayment.id}`} className={`${buttonVariants({ className: "mt-4" })}`}>
                     Open payment step
@@ -138,20 +175,25 @@ export default async function AdmissionPage({ params, searchParams }: PageProps)
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardDescription>Selected branch</CardDescription>
-                <CardTitle>{selectedBranch.name}</CardTitle>
+                <div className="flex items-center gap-3">
+                  <div className="rounded-[1rem] border border-[rgba(179,132,67,0.2)] bg-[rgba(179,132,67,0.08)] p-2 text-[rgb(120,83,34)]">
+                    <Landmark className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <CardDescription>Selected branch</CardDescription>
+                    <CardTitle>{selectedBranch.name}</CardTitle>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-3 text-sm text-slate-600">
+              <CardContent className="space-y-4 text-sm text-slate-600">
                 <div>{selectedBranch.city}, {selectedBranch.district}</div>
                 <div>{selectedBranch.address}</div>
                 <div>{selectedBranch.capacity_available} seats available right now</div>
                 <div>{selectedBranch.hostel_available ? "Hostel available" : "Day scholar flow"}</div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="rounded-[1.25rem] border border-white/70 bg-white/72 p-4">
                   <div className="text-slate-500">Tuition snapshot</div>
-                  <div className="mt-1 font-semibold text-slate-950">
-                    {selectedBranch.latest_fee_snapshot?.tuition_fee
-                      ? formatCurrency(selectedBranch.latest_fee_snapshot.tuition_fee)
-                      : "Shared on counselor call"}
+                  <div className="mt-2 text-lg font-semibold tracking-[-0.04em] text-slate-950">
+                    {selectedBranch.latest_fee_snapshot?.tuition_fee ? formatCurrency(selectedBranch.latest_fee_snapshot.tuition_fee) : "Shared on counselor call"}
                   </div>
                 </div>
                 <Link href={`/branches/${selectedBranch.code}?leadId=${workflow.lead.id}`} className={buttonVariants({ variant: "outline" })}>
@@ -159,31 +201,58 @@ export default async function AdmissionPage({ params, searchParams }: PageProps)
                 </Link>
               </CardContent>
             </Card>
+
             <Card>
               <CardHeader>
-                <CardDescription>Seat lock</CardDescription>
-                <CardTitle>{formatCurrency(seatLockAmount)}</CardTitle>
+                <div className="flex items-center gap-3">
+                  <div className="rounded-[1rem] border border-[rgba(15,118,110,0.15)] bg-[rgba(15,118,110,0.08)] p-2 text-teal-700">
+                    <Wallet className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <CardDescription>Seat lock</CardDescription>
+                    <CardTitle>{formatCurrency(seatLockAmount)}</CardTitle>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-3 text-sm text-slate-600">
+              <CardContent className="space-y-4 text-sm text-slate-600">
                 <div>Payment status: {humanizeToken(workflow.lead.payment_status ?? "not_created")}</div>
                 <div>Form status: {humanizeToken(workflow.form?.submission_status ?? "not_started")}</div>
                 <div>
                   {communicationSettings.seat_lock_enabled
-                    ? "Seat-lock is enabled for this organization. Use the official payment step generated after form submission."
+                    ? "Seat-lock is enabled for this organization. The official payment step is generated after form submission."
                     : "Seat-lock is currently disabled in organization settings."}
                 </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="rounded-[1.25rem] border border-white/70 bg-white/72 p-4">
                   <div className="font-medium text-slate-950">Payment terms</div>
-                  <div className="mt-2">{communicationSettings.payment_terms_text}</div>
+                  <div className="mt-2 leading-6">{communicationSettings.payment_terms_text}</div>
                 </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="rounded-[1.25rem] border border-white/70 bg-white/72 p-4">
                   <div className="font-medium text-slate-950">Refund policy</div>
-                  <div className="mt-2">{communicationSettings.refund_policy_text}</div>
+                  <div className="mt-2 leading-6">{communicationSettings.refund_policy_text}</div>
                 </div>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="rounded-[1rem] border border-[rgba(15,118,110,0.15)] bg-[rgba(15,118,110,0.08)] p-2 text-teal-700">
+                    <ShieldCheck className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <CardDescription>Parent clarity</CardDescription>
+                    <CardTitle>What this step is designed to prevent</CardTitle>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm leading-6 text-slate-600">
+                <div className="rounded-[1.25rem] border border-white/70 bg-white/72 p-4">No duplicate payment links when a family has already reached the checkout stage.</div>
+                <div className="rounded-[1.25rem] border border-white/70 bg-white/72 p-4">No guesswork about branch, fee context, or who owns the next follow-up.</div>
+                <div className="rounded-[1.25rem] border border-white/70 bg-white/72 p-4">No hidden jump from form to payment without explaining terms and refund policy.</div>
+              </CardContent>
+            </Card>
           </div>
-        </div>
+        </section>
       </div>
     </main>
   );

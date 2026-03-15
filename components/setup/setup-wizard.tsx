@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ArrowRight, CheckCircle2, CircleDashed, ShieldCheck, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supportedPrograms } from "@/lib/operations/catalog";
@@ -12,8 +14,77 @@ type SetupWizardProps = {
   snapshot: SetupWizardSnapshot;
 };
 
+const stepMeta: Record<
+  SetupWizardStepKey,
+  {
+    eyebrow: string;
+    description: string;
+    guidance: string;
+  }
+> = {
+  organization_profile: {
+    eyebrow: "Identity",
+    description: "Set the public-facing organization identity that will anchor trust across the product.",
+    guidance: "This information powers headers, contact ownership, and the first layer of credibility parents see.",
+  },
+  institution_details: {
+    eyebrow: "Institution",
+    description: "Define the institution record clearly so branches, fees, and admissions logic can inherit the right context.",
+    guidance: "Keep the academic brand, board, and admissions contact clean before live traffic starts.",
+  },
+  branch_details: {
+    eyebrow: "Branch",
+    description: "Lock the branch address and catchment details so recommendations and parent communication feel precise.",
+    guidance: "This is where the product becomes operationally local instead of generic.",
+  },
+  programs_and_intake: {
+    eyebrow: "Programs",
+    description: "Confirm which courses and intake numbers are active so counselors do not pitch stale inventory.",
+    guidance: "The best admissions systems make seat availability and stream positioning feel reliable.",
+  },
+  fees: {
+    eyebrow: "Commercials",
+    description: "Anchor tuition and seat-lock figures before payment nudges and counselor scripts go live.",
+    guidance: "Parents lose trust fast when fee communication changes mid-funnel.",
+  },
+  eligibility_and_documents: {
+    eyebrow: "Documents",
+    description: "Make the checklist explicit so form completion and follow-up tasks stay efficient.",
+    guidance: "Clean document rules reduce both parent confusion and counselor back-and-forth.",
+  },
+  trust_assets: {
+    eyebrow: "Trust",
+    description: "Bring together proof points, media, and FAQs that strengthen conversion conversations.",
+    guidance: "This is the evidence layer behind recommendations, objections, and branch pages.",
+  },
+  admission_cycle: {
+    eyebrow: "Cycle",
+    description: "Keep the admissions calendar current so automation, urgency, and campaign timing stay aligned.",
+    guidance: "If cycle data is wrong, every follow-up sequence becomes noisy.",
+  },
+  commission_rules: {
+    eyebrow: "Payouts",
+    description: "Document payout logic so finance, operations, and counselor expectations stay in sync.",
+    guidance: "A clear rule summary prevents disputes once seat locks and confirmations start appearing.",
+  },
+  whatsapp_settings: {
+    eyebrow: "Messaging",
+    description: "Tune rate limits, business hours, and sandbox posture before moving from pilot to live traffic.",
+    guidance: "These settings protect trust and keep the system commercially disciplined.",
+  },
+  review_and_publish: {
+    eyebrow: "Launch",
+    description: "Review the setup state, resolve blockers, and publish only when the operating model is stable.",
+    guidance: "Publishing should feel deliberate, not rushed.",
+  },
+};
+
 function stringValue(value: unknown) {
   return typeof value === "string" ? value : "";
+}
+
+function numberValue(value: unknown, fallback = 0) {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
 export function SetupWizard({ snapshot }: SetupWizardProps) {
@@ -75,7 +146,7 @@ export function SetupWizard({ snapshot }: SetupWizardProps) {
     },
     commission_rules: {
       commission_rule_count: snapshot.institutions.length,
-      rule_summary: "Narayana ₹5,000 · Sri Chaitanya ₹5,000 · Dhanik Bharat ₹15,000",
+      rule_summary: "Narayana Rs 5,000 / Sri Chaitanya Rs 5,000 / Dhanik Bharat Rs 15,000",
     },
     whatsapp_settings: {
       sandbox_mode: snapshot.communication_settings?.sandbox_mode ?? true,
@@ -88,6 +159,7 @@ export function SetupWizard({ snapshot }: SetupWizardProps) {
   }));
 
   const currentStep = snapshot.steps[currentStepIndex];
+  const currentMeta = currentStep ? stepMeta[currentStep.key] : null;
 
   function updateStepField(stepKey: SetupWizardStepKey, field: string, value: unknown) {
     setDraftState((current) => ({
@@ -168,349 +240,532 @@ export function SetupWizard({ snapshot }: SetupWizardProps) {
     [completedSteps.length, snapshot.steps.length],
   );
 
-  return (
-    <div className="grid gap-6 xl:grid-cols-[0.28fr,0.72fr]">
-      <Card>
-        <CardHeader>
-          <CardDescription>Setup progress</CardDescription>
-          <CardTitle>{progress}% complete</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="h-2 rounded-full bg-slate-200">
-            <div className="h-2 rounded-full bg-sky-600" style={{ width: `${progress}%` }} />
+  function renderStepContent() {
+    switch (currentStep?.key) {
+      case "organization_profile":
+        return (
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="space-y-2 text-sm">
+              <span className="text-slate-600">Public name</span>
+              <input
+                value={stringValue(draftState.organization_profile.public_name)}
+                onChange={(event) => updateStepField("organization_profile", "public_name", event.target.value)}
+                className="dashboard-input"
+              />
+            </label>
+            <label className="space-y-2 text-sm">
+              <span className="text-slate-600">Legal name</span>
+              <input
+                value={stringValue(draftState.organization_profile.legal_name)}
+                onChange={(event) => updateStepField("organization_profile", "legal_name", event.target.value)}
+                className="dashboard-input"
+              />
+            </label>
+            <label className="space-y-2 text-sm">
+              <span className="text-slate-600">Primary contact</span>
+              <input
+                value={stringValue(draftState.organization_profile.primary_contact_name)}
+                onChange={(event) => updateStepField("organization_profile", "primary_contact_name", event.target.value)}
+                className="dashboard-input"
+              />
+            </label>
+            <label className="space-y-2 text-sm">
+              <span className="text-slate-600">Primary phone</span>
+              <input
+                value={stringValue(draftState.organization_profile.primary_contact_phone)}
+                onChange={(event) => updateStepField("organization_profile", "primary_contact_phone", event.target.value)}
+                className="dashboard-input"
+              />
+            </label>
           </div>
-          {snapshot.steps.map((step, index) => (
-            <button
-              key={step.key}
-              type="button"
-              onClick={() => setCurrentStepIndex(index)}
-              className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm ${
-                currentStep?.key === step.key ? "border-sky-300 bg-sky-50 text-sky-900" : "border-slate-200 bg-white text-slate-700"
+        );
+
+      case "institution_details":
+        return (
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="space-y-2 text-sm">
+              <span className="text-slate-600">Institution name</span>
+              <input
+                value={stringValue(draftState.institution_details.name)}
+                onChange={(event) => updateStepField("institution_details", "name", event.target.value)}
+                className="dashboard-input"
+              />
+            </label>
+            <label className="space-y-2 text-sm">
+              <span className="text-slate-600">Institution type</span>
+              <input
+                value={stringValue(draftState.institution_details.institution_type)}
+                onChange={(event) => updateStepField("institution_details", "institution_type", event.target.value)}
+                className="dashboard-input"
+              />
+            </label>
+            <label className="space-y-2 text-sm">
+              <span className="text-slate-600">Board or university</span>
+              <input
+                value={stringValue(draftState.institution_details.board_or_university)}
+                onChange={(event) => updateStepField("institution_details", "board_or_university", event.target.value)}
+                className="dashboard-input"
+              />
+            </label>
+            <label className="space-y-2 text-sm">
+              <span className="text-slate-600">Admissions phone</span>
+              <input
+                value={stringValue(draftState.institution_details.admissions_phone)}
+                onChange={(event) => updateStepField("institution_details", "admissions_phone", event.target.value)}
+                className="dashboard-input"
+              />
+            </label>
+            <label className="space-y-2 text-sm md:col-span-2">
+              <span className="text-slate-600">Admissions email</span>
+              <input
+                value={stringValue(draftState.institution_details.admissions_email)}
+                onChange={(event) => updateStepField("institution_details", "admissions_email", event.target.value)}
+                className="dashboard-input"
+              />
+            </label>
+          </div>
+        );
+
+      case "branch_details":
+        return (
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="space-y-2 text-sm">
+              <span className="text-slate-600">Branch name</span>
+              <input
+                value={stringValue(draftState.branch_details.branch_name)}
+                onChange={(event) => updateStepField("branch_details", "branch_name", event.target.value)}
+                className="dashboard-input"
+              />
+            </label>
+            <label className="space-y-2 text-sm">
+              <span className="text-slate-600">Contact phone</span>
+              <input
+                value={stringValue(draftState.branch_details.contact_phone)}
+                onChange={(event) => updateStepField("branch_details", "contact_phone", event.target.value)}
+                className="dashboard-input"
+              />
+            </label>
+            <label className="space-y-2 text-sm">
+              <span className="text-slate-600">City</span>
+              <input
+                value={stringValue(draftState.branch_details.city)}
+                onChange={(event) => updateStepField("branch_details", "city", event.target.value)}
+                className="dashboard-input"
+              />
+            </label>
+            <label className="space-y-2 text-sm">
+              <span className="text-slate-600">District</span>
+              <input
+                value={stringValue(draftState.branch_details.district)}
+                onChange={(event) => updateStepField("branch_details", "district", event.target.value)}
+                className="dashboard-input"
+              />
+            </label>
+            <label className="space-y-2 text-sm md:col-span-2">
+              <span className="text-slate-600">Address</span>
+              <textarea
+                rows={4}
+                value={stringValue(draftState.branch_details.address)}
+                onChange={(event) => updateStepField("branch_details", "address", event.target.value)}
+                className="dashboard-textarea"
+              />
+            </label>
+          </div>
+        );
+
+      case "programs_and_intake":
+        return (
+          <div className="space-y-4 text-sm text-slate-700">
+            <div className="rounded-[1.25rem] border border-white/70 bg-white/72 p-4">
+              <div className="font-medium text-slate-950">Catalog focus</div>
+              <div className="mt-2 leading-6 text-slate-600">Supported v1 categories: Intermediate, BTech, Degree</div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="space-y-2">
+                <span className="text-slate-600">First active program</span>
+                <input
+                  value={stringValue(draftState.programs_and_intake.first_program)}
+                  onChange={(event) => updateStepField("programs_and_intake", "first_program", event.target.value)}
+                  className="dashboard-input"
+                />
+              </label>
+              <label className="space-y-2">
+                <span className="text-slate-600">Seats available</span>
+                <input
+                  type="number"
+                  value={numberValue(draftState.programs_and_intake.seats_available)}
+                  onChange={(event) => updateStepField("programs_and_intake", "seats_available", Number(event.target.value))}
+                  className="dashboard-input"
+                />
+              </label>
+              <label className="space-y-2">
+                <span className="text-slate-600">Total intake</span>
+                <input
+                  type="number"
+                  value={numberValue(draftState.programs_and_intake.intake_total)}
+                  onChange={(event) => updateStepField("programs_and_intake", "intake_total", Number(event.target.value))}
+                  className="dashboard-input"
+                />
+              </label>
+              <div className="rounded-[1.25rem] border border-white/70 bg-white/72 p-4">
+                <div className="font-medium text-slate-950">Active programs</div>
+                <div className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-slate-950">
+                  {numberValue(draftState.programs_and_intake.active_programs)}
+                </div>
+              </div>
+            </div>
+            <div className="rounded-[1.25rem] border border-white/70 bg-white/72 p-4">
+              <div className="font-medium text-slate-950">Supported catalog</div>
+              <div className="mt-2 leading-6 text-slate-600">
+                Intermediate: {supportedPrograms.intermediate.join(", ")} | BTech: {supportedPrograms.btech.join(", ")} | Degree:{" "}
+                {supportedPrograms.degree.join(", ")}
+              </div>
+            </div>
+          </div>
+        );
+
+      case "fees":
+        return (
+          <div className="grid gap-4 md:grid-cols-3">
+            <label className="space-y-2 text-sm">
+              <span className="text-slate-600">Tuition fee</span>
+              <input
+                type="number"
+                value={numberValue(draftState.fees.tuition_fee)}
+                onChange={(event) => updateStepField("fees", "tuition_fee", Number(event.target.value))}
+                className="dashboard-input"
+              />
+            </label>
+            <label className="space-y-2 text-sm">
+              <span className="text-slate-600">Seat-lock amount</span>
+              <input
+                type="number"
+                value={numberValue(draftState.fees.seat_lock, 1000)}
+                onChange={(event) => updateStepField("fees", "seat_lock", Number(event.target.value))}
+                className="dashboard-input"
+              />
+            </label>
+            <div className="rounded-[1.25rem] border border-white/70 bg-white/72 p-4">
+              <div className="font-medium text-slate-950">Fee rows configured</div>
+              <div className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-slate-950">{snapshot.fee_structures.length}</div>
+            </div>
+          </div>
+        );
+
+      case "eligibility_and_documents":
+        return (
+          <div className="space-y-4 text-sm text-slate-700">
+            <div className="rounded-[1.25rem] border border-white/70 bg-white/72 p-4">
+              <div className="font-medium text-slate-950">Required documents configured</div>
+              <div className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-slate-950">{snapshot.required_documents.length}</div>
+            </div>
+            <label className="space-y-2">
+              <span className="text-slate-600">Document checklist summary</span>
+              <textarea
+                rows={4}
+                value={stringValue(draftState.eligibility_and_documents.sample_documents)}
+                onChange={(event) => updateStepField("eligibility_and_documents", "sample_documents", event.target.value)}
+                className="dashboard-textarea"
+              />
+            </label>
+          </div>
+        );
+
+      case "trust_assets":
+        return (
+          <div className="space-y-4 text-sm text-slate-700">
+            <div className="rounded-[1.25rem] border border-white/70 bg-white/72 p-4">
+              <div className="font-medium text-slate-950">Trust assets available</div>
+              <div className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-slate-950">{snapshot.trust_assets.length}</div>
+            </div>
+            <label className="space-y-2">
+              <span className="text-slate-600">Trust asset and FAQ summary</span>
+              <textarea
+                rows={4}
+                value={stringValue(draftState.trust_assets.trust_assets_summary)}
+                onChange={(event) => updateStepField("trust_assets", "trust_assets_summary", event.target.value)}
+                className="dashboard-textarea"
+              />
+            </label>
+          </div>
+        );
+
+      case "admission_cycle":
+        return (
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="space-y-2 text-sm">
+              <span className="text-slate-600">Academic year</span>
+              <input
+                value={stringValue(draftState.admission_cycle.academic_year)}
+                onChange={(event) => updateStepField("admission_cycle", "academic_year", event.target.value)}
+                className="dashboard-input"
+              />
+            </label>
+            <label className="space-y-2 text-sm">
+              <span className="text-slate-600">Application end date</span>
+              <input
+                type="date"
+                value={stringValue(draftState.admission_cycle.application_end_date)}
+                onChange={(event) => updateStepField("admission_cycle", "application_end_date", event.target.value)}
+                className="dashboard-input"
+              />
+            </label>
+            <label className="dashboard-checkbox-row md:col-span-2">
+              <input
+                type="checkbox"
+                checked={Boolean(draftState.admission_cycle.admissions_open)}
+                onChange={(event) => updateStepField("admission_cycle", "admissions_open", event.target.checked)}
+              />
+              Admissions open
+            </label>
+          </div>
+        );
+
+      case "commission_rules":
+        return (
+          <div className="space-y-4 text-sm text-slate-700">
+            <div className="rounded-[1.25rem] border border-white/70 bg-white/72 p-4">
+              <div className="font-medium text-slate-950">Rule coverage</div>
+              <div className="mt-2 leading-6 text-slate-600">
+                Keep payout logic easy to audit across institutions, counselor teams, and finance workflows.
+              </div>
+            </div>
+            <label className="space-y-2">
+              <span className="text-slate-600">Rule summary</span>
+              <textarea
+                rows={4}
+                value={stringValue(draftState.commission_rules.rule_summary)}
+                onChange={(event) => updateStepField("commission_rules", "rule_summary", event.target.value)}
+                className="dashboard-textarea"
+              />
+            </label>
+            <div className="rounded-[1.25rem] border border-white/70 bg-white/72 p-4 text-slate-600">
+              Example structure: Narayana Rs 5,000 / Sri Chaitanya Rs 5,000 / Dhanik Bharat Rs 15,000
+            </div>
+          </div>
+        );
+
+      case "whatsapp_settings":
+        return (
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="dashboard-checkbox-row md:col-span-2">
+              <input
+                type="checkbox"
+                checked={Boolean(draftState.whatsapp_settings.sandbox_mode)}
+                onChange={(event) => updateStepField("whatsapp_settings", "sandbox_mode", event.target.checked)}
+              />
+              Sandbox mode
+            </label>
+            <label className="dashboard-checkbox-row md:col-span-2">
+              <input
+                type="checkbox"
+                checked={Boolean(draftState.whatsapp_settings.seat_lock_enabled)}
+                onChange={(event) => updateStepField("whatsapp_settings", "seat_lock_enabled", event.target.checked)}
+              />
+              Seat-lock messaging enabled
+            </label>
+            <label className="space-y-2 text-sm">
+              <span className="text-slate-600">Rate limit per minute</span>
+              <input
+                type="number"
+                value={numberValue(draftState.whatsapp_settings.rate_limit_per_minute, 30)}
+                onChange={(event) => updateStepField("whatsapp_settings", "rate_limit_per_minute", Number(event.target.value))}
+                className="dashboard-input"
+              />
+            </label>
+            <label className="space-y-2 text-sm">
+              <span className="text-slate-600">Business hours start</span>
+              <input
+                value={stringValue(draftState.whatsapp_settings.business_hours_start)}
+                onChange={(event) => updateStepField("whatsapp_settings", "business_hours_start", event.target.value)}
+                className="dashboard-input"
+              />
+            </label>
+            <label className="space-y-2 text-sm">
+              <span className="text-slate-600">Business hours end</span>
+              <input
+                value={stringValue(draftState.whatsapp_settings.business_hours_end)}
+                onChange={(event) => updateStepField("whatsapp_settings", "business_hours_end", event.target.value)}
+                className="dashboard-input"
+              />
+            </label>
+          </div>
+        );
+
+      case "review_and_publish":
+        return (
+          <div className="space-y-4">
+            <div
+              className={`rounded-[1.25rem] border p-4 text-sm ${
+                snapshot.publish_ready ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-amber-200 bg-amber-50 text-amber-900"
               }`}
             >
-              <span>{step.label}</span>
-              <span>{completedSteps.includes(step.key) ? "Done" : step.required ? "Required" : "Optional"}</span>
-            </button>
-          ))}
+              {snapshot.publish_ready
+                ? "Setup is ready to publish."
+                : "Publishing is blocked until the required setup data is complete."}
+            </div>
+            {snapshot.blockers.length > 0 ? (
+              <ul className="space-y-2 text-sm text-slate-700">
+                {snapshot.blockers.map((blocker) => (
+                  <li key={blocker} className="rounded-[1.15rem] border border-white/70 bg-white/72 px-4 py-3">
+                    {blocker}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  }
+
+  return (
+    <div className="grid gap-6 xl:grid-cols-[320px,minmax(0,1fr)]">
+      <Card className="h-fit overflow-hidden xl:sticky xl:top-24">
+        <div className="border-b border-white/60 bg-[linear-gradient(135deg,rgba(11,27,40,0.98),rgba(19,53,69,0.92)_58%,rgba(18,83,86,0.8))]">
+          <CardHeader className="space-y-4 text-white">
+            <Badge variant="accent">Setup progress</Badge>
+            <div>
+              <CardTitle className="text-[1.9rem] tracking-[-0.06em] text-white">{progress}% complete</CardTitle>
+              <CardDescription className="mt-2 text-slate-300">
+                Build the operating model with the same polish and discipline you expect from the live product.
+              </CardDescription>
+            </div>
+          </CardHeader>
+        </div>
+
+        <CardContent className="space-y-5 pt-6">
+          <div className="rounded-[1.35rem] border border-white/70 bg-white/72 p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-slate-500">Completed</div>
+                <div className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-slate-950">
+                  {completedSteps.length}/{snapshot.steps.length}
+                </div>
+              </div>
+              <div className="rounded-full border border-[rgba(15,118,110,0.14)] bg-[rgba(15,118,110,0.08)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-teal-800">
+                {snapshot.publish_ready ? "Ready" : "In progress"}
+              </div>
+            </div>
+            <div className="mt-4 h-2 rounded-full bg-slate-200/80">
+              <div className="h-2 rounded-full bg-[linear-gradient(90deg,#0f766e,#b38443)]" style={{ width: `${progress}%` }} />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {snapshot.steps.map((step, index) => {
+              const isActive = currentStep?.key === step.key;
+              const isDone = completedSteps.includes(step.key);
+
+              return (
+                <button
+                  key={step.key}
+                  type="button"
+                  onClick={() => setCurrentStepIndex(index)}
+                  className={`flex w-full items-start justify-between gap-4 rounded-[1.25rem] border px-4 py-4 text-left transition-all ${
+                    isActive
+                      ? "border-[rgba(15,118,110,0.28)] bg-[rgba(15,118,110,0.08)] shadow-[0_16px_36px_rgba(15,118,110,0.08)]"
+                      : "border-white/70 bg-white/72 hover:border-[rgba(179,132,67,0.28)] hover:bg-[rgba(255,252,247,0.92)]"
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-full border ${
+                        isDone
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                          : isActive
+                            ? "border-[rgba(15,118,110,0.24)] bg-[rgba(15,118,110,0.12)] text-teal-700"
+                            : "border-slate-200 bg-white text-slate-500"
+                      }`}
+                    >
+                      {isDone ? <CheckCircle2 className="h-4 w-4" /> : <CircleDashed className="h-4 w-4" />}
+                    </div>
+                    <div>
+                      <div className="font-medium text-slate-950">{step.label}</div>
+                      <div className="mt-1 text-xs leading-5 text-slate-500">{stepMeta[step.key].eyebrow}</div>
+                    </div>
+                  </div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    {isDone ? "Done" : step.required ? "Required" : "Optional"}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="rounded-[1.35rem] border border-[rgba(17,32,49,0.14)] bg-[linear-gradient(135deg,#112031,#1f3a4d)] p-4 text-sm text-slate-200">
+            <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-slate-300">
+              <ShieldCheck className="h-4 w-4 text-[#f0d59c]" />
+              Publishing discipline
+            </div>
+            <div className="mt-3 leading-6">
+              Use this as an operations readiness checklist, not just a data form. The cleaner the setup, the stronger the live funnel.
+            </div>
+          </div>
         </CardContent>
       </Card>
 
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardDescription>Step {currentStepIndex + 1}</CardDescription>
-            <CardTitle>{currentStep?.label}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            {currentStep?.key === "organization_profile" ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="space-y-2 text-sm">
-                  <span className="text-slate-600">Public name</span>
-                  <input
-                    value={stringValue(draftState.organization_profile.public_name)}
-                    onChange={(event) => updateStepField("organization_profile", "public_name", event.target.value)}
-                    className="h-11 w-full rounded-2xl border border-slate-300 px-4"
-                  />
-                </label>
-                <label className="space-y-2 text-sm">
-                  <span className="text-slate-600">Legal name</span>
-                  <input
-                    value={stringValue(draftState.organization_profile.legal_name)}
-                    onChange={(event) => updateStepField("organization_profile", "legal_name", event.target.value)}
-                    className="h-11 w-full rounded-2xl border border-slate-300 px-4"
-                  />
-                </label>
-                <label className="space-y-2 text-sm">
-                  <span className="text-slate-600">Primary contact</span>
-                  <input
-                    value={stringValue(draftState.organization_profile.primary_contact_name)}
-                    onChange={(event) => updateStepField("organization_profile", "primary_contact_name", event.target.value)}
-                    className="h-11 w-full rounded-2xl border border-slate-300 px-4"
-                  />
-                </label>
-                <label className="space-y-2 text-sm">
-                  <span className="text-slate-600">Primary phone</span>
-                  <input
-                    value={stringValue(draftState.organization_profile.primary_contact_phone)}
-                    onChange={(event) => updateStepField("organization_profile", "primary_contact_phone", event.target.value)}
-                    className="h-11 w-full rounded-2xl border border-slate-300 px-4"
-                  />
-                </label>
+      <Card className="overflow-hidden">
+        <div className="border-b border-white/60 bg-[linear-gradient(180deg,rgba(255,253,249,0.92),rgba(255,248,240,0.72))]">
+          <CardHeader className="space-y-5">
+            <div className="flex flex-wrap items-center gap-3">
+              <Badge variant="info">Step {currentStepIndex + 1}</Badge>
+              <Badge variant={currentStep?.required ? "accent" : "neutral"}>{currentStep?.required ? "Required" : "Optional"}</Badge>
+            </div>
+            <div className="grid gap-5 xl:grid-cols-[1.15fr,0.85fr]">
+              <div>
+                <CardDescription>{currentMeta?.eyebrow ?? "Setup"}</CardDescription>
+                <CardTitle className="mt-2 text-[2rem] tracking-[-0.06em] text-slate-950">{currentStep?.label ?? "Setup step"}</CardTitle>
+                <div className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">{currentMeta?.description}</div>
               </div>
-            ) : null}
-
-            {currentStep?.key === "institution_details" ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="space-y-2 text-sm">
-                  <span className="text-slate-600">Institution name</span>
-                  <input
-                    value={stringValue(draftState.institution_details.name)}
-                    onChange={(event) => updateStepField("institution_details", "name", event.target.value)}
-                    className="h-11 w-full rounded-2xl border border-slate-300 px-4"
-                  />
-                </label>
-                <label className="space-y-2 text-sm">
-                  <span className="text-slate-600">Institution type</span>
-                  <input
-                    value={stringValue(draftState.institution_details.institution_type)}
-                    onChange={(event) => updateStepField("institution_details", "institution_type", event.target.value)}
-                    className="h-11 w-full rounded-2xl border border-slate-300 px-4"
-                  />
-                </label>
-                <label className="space-y-2 text-sm">
-                  <span className="text-slate-600">Board / university</span>
-                  <input
-                    value={stringValue(draftState.institution_details.board_or_university)}
-                    onChange={(event) => updateStepField("institution_details", "board_or_university", event.target.value)}
-                    className="h-11 w-full rounded-2xl border border-slate-300 px-4"
-                  />
-                </label>
-                <label className="space-y-2 text-sm">
-                  <span className="text-slate-600">Admissions phone</span>
-                  <input
-                    value={stringValue(draftState.institution_details.admissions_phone)}
-                    onChange={(event) => updateStepField("institution_details", "admissions_phone", event.target.value)}
-                    className="h-11 w-full rounded-2xl border border-slate-300 px-4"
-                  />
-                </label>
-              </div>
-            ) : null}
-
-            {currentStep?.key === "branch_details" ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="space-y-2 text-sm">
-                  <span className="text-slate-600">Branch name</span>
-                  <input
-                    value={stringValue(draftState.branch_details.branch_name)}
-                    onChange={(event) => updateStepField("branch_details", "branch_name", event.target.value)}
-                    className="h-11 w-full rounded-2xl border border-slate-300 px-4"
-                  />
-                </label>
-                <label className="space-y-2 text-sm">
-                  <span className="text-slate-600">Contact phone</span>
-                  <input
-                    value={stringValue(draftState.branch_details.contact_phone)}
-                    onChange={(event) => updateStepField("branch_details", "contact_phone", event.target.value)}
-                    className="h-11 w-full rounded-2xl border border-slate-300 px-4"
-                  />
-                </label>
-                <label className="space-y-2 text-sm md:col-span-2">
-                  <span className="text-slate-600">Address</span>
-                  <textarea
-                    rows={3}
-                    value={stringValue(draftState.branch_details.address)}
-                    onChange={(event) => updateStepField("branch_details", "address", event.target.value)}
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3"
-                  />
-                </label>
-              </div>
-            ) : null}
-
-            {currentStep?.key === "programs_and_intake" ? (
-              <div className="space-y-4 text-sm text-slate-700">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  Supported v1 categories: Intermediate, BTech, Degree
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                <div className="rounded-[1.25rem] border border-white/70 bg-white/78 p-4">
+                  <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-slate-500">Guidance</div>
+                  <div className="mt-2 text-sm leading-6 text-slate-700">{currentMeta?.guidance}</div>
                 </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <label className="space-y-2">
-                    <span className="text-slate-600">First active program</span>
-                    <input
-                      value={stringValue(draftState.programs_and_intake.first_program)}
-                      onChange={(event) => updateStepField("programs_and_intake", "first_program", event.target.value)}
-                      className="h-11 w-full rounded-2xl border border-slate-300 px-4"
-                    />
-                  </label>
-                  <label className="space-y-2">
-                    <span className="text-slate-600">Seats available</span>
-                    <input
-                      type="number"
-                      value={Number(draftState.programs_and_intake.seats_available ?? 0)}
-                      onChange={(event) => updateStepField("programs_and_intake", "seats_available", Number(event.target.value))}
-                      className="h-11 w-full rounded-2xl border border-slate-300 px-4"
-                    />
-                  </label>
-                </div>
-                <div className="rounded-2xl border border-slate-200 p-4">
-                  <div className="font-medium text-slate-950">Supported catalog</div>
-                  <div className="mt-2 text-slate-600">
-                    Intermediate: {supportedPrograms.intermediate.join(", ")} · BTech: {supportedPrograms.btech.join(", ")} · Degree: {supportedPrograms.degree.join(", ")}
+                <div className="rounded-[1.25rem] border border-white/70 bg-white/78 p-4">
+                  <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-slate-500">Publish state</div>
+                  <div className="mt-2 flex items-center gap-2 text-sm font-medium text-slate-950">
+                    <Sparkles className="h-4 w-4 text-teal-700" />
+                    {snapshot.publish_ready ? "Ready when you are" : "Blockers still active"}
                   </div>
                 </div>
               </div>
-            ) : null}
-
-            {currentStep?.key === "fees" ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="space-y-2 text-sm">
-                  <span className="text-slate-600">Tuition fee</span>
-                  <input
-                    type="number"
-                    value={Number(draftState.fees.tuition_fee ?? 0)}
-                    onChange={(event) => updateStepField("fees", "tuition_fee", Number(event.target.value))}
-                    className="h-11 w-full rounded-2xl border border-slate-300 px-4"
-                  />
-                </label>
-                <label className="space-y-2 text-sm">
-                  <span className="text-slate-600">Seat-lock amount</span>
-                  <input
-                    type="number"
-                    value={Number(draftState.fees.seat_lock ?? 1000)}
-                    onChange={(event) => updateStepField("fees", "seat_lock", Number(event.target.value))}
-                    className="h-11 w-full rounded-2xl border border-slate-300 px-4"
-                  />
-                </label>
-              </div>
-            ) : null}
-
-            {currentStep?.key === "eligibility_and_documents" ? (
-              <div className="space-y-4 text-sm text-slate-700">
-                <div className="rounded-2xl border border-slate-200 p-4">
-                  <div className="font-medium text-slate-950">Required documents configured</div>
-                  <div className="mt-2">{snapshot.required_documents.length}</div>
-                </div>
-                <label className="space-y-2">
-                  <span className="text-slate-600">Document checklist summary</span>
-                  <textarea
-                    rows={3}
-                    value={stringValue(draftState.eligibility_and_documents.sample_documents)}
-                    onChange={(event) => updateStepField("eligibility_and_documents", "sample_documents", event.target.value)}
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3"
-                  />
-                </label>
-              </div>
-            ) : null}
-
-            {currentStep?.key === "trust_assets" ? (
-              <div className="space-y-4 text-sm text-slate-700">
-                <div className="rounded-2xl border border-slate-200 p-4">
-                  <div className="font-medium text-slate-950">Trust assets available</div>
-                  <div className="mt-2">{snapshot.trust_assets.length}</div>
-                </div>
-                <label className="space-y-2">
-                  <span className="text-slate-600">Trust asset / FAQ summary</span>
-                  <textarea
-                    rows={3}
-                    value={stringValue(draftState.trust_assets.trust_assets_summary)}
-                    onChange={(event) => updateStepField("trust_assets", "trust_assets_summary", event.target.value)}
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3"
-                  />
-                </label>
-              </div>
-            ) : null}
-
-            {currentStep?.key === "admission_cycle" ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="space-y-2 text-sm">
-                  <span className="text-slate-600">Academic year</span>
-                  <input
-                    value={stringValue(draftState.admission_cycle.academic_year)}
-                    onChange={(event) => updateStepField("admission_cycle", "academic_year", event.target.value)}
-                    className="h-11 w-full rounded-2xl border border-slate-300 px-4"
-                  />
-                </label>
-                <label className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(draftState.admission_cycle.admissions_open)}
-                    onChange={(event) => updateStepField("admission_cycle", "admissions_open", event.target.checked)}
-                  />
-                  Admissions open
-                </label>
-              </div>
-            ) : null}
-
-            {currentStep?.key === "commission_rules" ? (
-              <div className="space-y-4 text-sm text-slate-700">
-                <div className="rounded-2xl border border-slate-200 p-4">
-                  Current rule summary: {stringValue(draftState.commission_rules.rule_summary)}
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  Narayana ₹5,000 · Sri Chaitanya ₹5,000 · Dhanik Bharat ₹15,000
-                </div>
-              </div>
-            ) : null}
-
-            {currentStep?.key === "whatsapp_settings" ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(draftState.whatsapp_settings.sandbox_mode)}
-                    onChange={(event) => updateStepField("whatsapp_settings", "sandbox_mode", event.target.checked)}
-                  />
-                  Sandbox mode
-                </label>
-                <label className="space-y-2 text-sm">
-                  <span className="text-slate-600">Rate limit / minute</span>
-                  <input
-                    type="number"
-                    value={Number(draftState.whatsapp_settings.rate_limit_per_minute ?? 30)}
-                    onChange={(event) => updateStepField("whatsapp_settings", "rate_limit_per_minute", Number(event.target.value))}
-                    className="h-11 w-full rounded-2xl border border-slate-300 px-4"
-                  />
-                </label>
-                <label className="space-y-2 text-sm">
-                  <span className="text-slate-600">Business hours start</span>
-                  <input
-                    value={stringValue(draftState.whatsapp_settings.business_hours_start)}
-                    onChange={(event) => updateStepField("whatsapp_settings", "business_hours_start", event.target.value)}
-                    className="h-11 w-full rounded-2xl border border-slate-300 px-4"
-                  />
-                </label>
-                <label className="space-y-2 text-sm">
-                  <span className="text-slate-600">Business hours end</span>
-                  <input
-                    value={stringValue(draftState.whatsapp_settings.business_hours_end)}
-                    onChange={(event) => updateStepField("whatsapp_settings", "business_hours_end", event.target.value)}
-                    className="h-11 w-full rounded-2xl border border-slate-300 px-4"
-                  />
-                </label>
-              </div>
-            ) : null}
-
-            {currentStep?.key === "review_and_publish" ? (
-              <div className="space-y-4">
-                <div className={`rounded-2xl border p-4 text-sm ${snapshot.publish_ready ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-amber-200 bg-amber-50 text-amber-900"}`}>
-                  {snapshot.publish_ready ? "Setup is ready to publish." : "Publish is blocked until the required setup data is complete."}
-                </div>
-                {snapshot.blockers.length > 0 ? (
-                  <ul className="space-y-2 text-sm text-slate-700">
-                    {snapshot.blockers.map((blocker) => (
-                      <li key={blocker} className="rounded-2xl border border-slate-200 px-4 py-3">
-                        {blocker}
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
-            ) : null}
-
-            <div className="flex flex-wrap items-center gap-3">
-              <Button type="button" onClick={() => saveCurrentStep(true)} disabled={saving}>
-                {saving ? "Saving..." : "Save and continue"}
-              </Button>
-              <Button type="button" variant="outline" onClick={() => saveCurrentStep(false)} disabled={saving}>
-                Save draft
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setCurrentStepIndex((index) => Math.min(index + 1, snapshot.steps.length - 1))}
-                disabled={saving}
-              >
-                Skip for now
-              </Button>
-              {currentStep?.key === "review_and_publish" ? (
-                <Button type="button" variant="secondary" disabled={saving || !snapshot.publish_ready} onClick={publishSetup}>
-                  Publish setup
-                </Button>
-              ) : null}
             </div>
+          </CardHeader>
+        </div>
 
-            {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
-          </CardContent>
-        </Card>
-      </div>
+        <CardContent className="space-y-6 pt-6">
+          {renderStepContent()}
+
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <Button type="button" onClick={() => saveCurrentStep(true)} disabled={saving} className="min-w-[170px]">
+              {saving ? "Saving..." : "Save and continue"}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => saveCurrentStep(false)} disabled={saving}>
+              Save draft
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setCurrentStepIndex((index) => Math.min(index + 1, snapshot.steps.length - 1))}
+              disabled={saving}
+            >
+              Skip for now
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+            {currentStep?.key === "review_and_publish" ? (
+              <Button type="button" variant="secondary" disabled={saving || !snapshot.publish_ready} onClick={publishSetup}>
+                Publish setup
+              </Button>
+            ) : null}
+          </div>
+
+          {error ? <div className="rounded-[1.15rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
+        </CardContent>
+      </Card>
     </div>
   );
 }

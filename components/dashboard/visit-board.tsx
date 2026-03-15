@@ -27,28 +27,28 @@ export function VisitBoard({ rows, branchNames }: VisitBoardProps) {
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto rounded-[1.5rem] border border-white/70 bg-white/72 p-3">
       <table className="min-w-full text-left text-sm">
-        <thead className="text-slate-500">
+        <thead className="border-b border-slate-200/80 text-slate-500">
           <tr>
-            <th className="pb-3 font-medium">Branch</th>
-            <th className="pb-3 font-medium">Scheduled for</th>
-            <th className="pb-3 font-medium">Status</th>
-            <th className="pb-3 font-medium">Outcome</th>
-            <th className="pb-3 font-medium">Notes</th>
-            <th className="pb-3 font-medium">Actions</th>
+            <th className="pb-4 pt-1 font-medium">Branch</th>
+            <th className="pb-4 pt-1 font-medium">Scheduled for</th>
+            <th className="pb-4 pt-1 font-medium">Status</th>
+            <th className="pb-4 pt-1 font-medium">Outcome</th>
+            <th className="pb-4 pt-1 font-medium">Notes</th>
+            <th className="pb-4 pt-1 font-medium">Actions</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-200">
+        <tbody className="divide-y divide-slate-200/80">
           {rows.map((row) => (
-            <tr key={row.id}>
-              <td className="py-4 font-medium text-slate-950">{branchNames[row.branch_id] ?? "Unknown branch"}</td>
-              <td className="py-4 text-slate-600">{new Date(row.scheduled_for).toLocaleString("en-IN")}</td>
-              <td className="py-4">
+            <tr key={row.id} className="align-top">
+              <td className="py-4 pr-4 font-semibold text-slate-950">{branchNames[row.branch_id] ?? "Unknown branch"}</td>
+              <td className="py-4 pr-4 text-slate-600">{new Date(row.scheduled_for).toLocaleString("en-IN")}</td>
+              <td className="py-4 pr-4">
                 <select
                   value={row.status}
                   onChange={(event) => patchVisit(row.id, { status: event.target.value })}
-                  className="h-10 rounded-2xl border border-slate-300 bg-white px-3 text-sm text-slate-900"
+                  className="dashboard-input h-10"
                 >
                   <option value="proposed">proposed</option>
                   <option value="confirmed">confirmed</option>
@@ -56,20 +56,20 @@ export function VisitBoard({ rows, branchNames }: VisitBoardProps) {
                   <option value="cancelled">cancelled</option>
                 </select>
               </td>
-              <td className="py-4">
+              <td className="py-4 pr-4">
                 <select
                   value={row.outcome_status ?? ""}
                   onChange={(event) => patchVisit(row.id, { outcomeStatus: event.target.value || null })}
-                  className="h-10 rounded-2xl border border-slate-300 bg-white px-3 text-sm text-slate-900"
+                  className="dashboard-input h-10"
                 >
-                  <option value="">—</option>
+                  <option value="">-</option>
                   <option value="attended">attended</option>
                   <option value="rescheduled">rescheduled</option>
                   <option value="no_show">no_show</option>
                   <option value="converted">converted</option>
                 </select>
               </td>
-              <td className="py-4 text-slate-600">{row.notes ?? "—"}</td>
+              <td className="py-4 pr-4 text-slate-600">{row.notes ?? "-"}</td>
               <td className="py-4">
                 <Button
                   type="button"

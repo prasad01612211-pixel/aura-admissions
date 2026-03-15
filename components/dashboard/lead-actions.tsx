@@ -57,11 +57,14 @@ export function LeadActions({ branchId, leadId, ownerUserId, users }: LeadAction
 
   return (
     <div className="space-y-4">
+      <div className="rounded-[1.35rem] border border-white/70 bg-white/72 p-4 text-sm leading-6 text-slate-600">
+        Every action here updates the live lead workflow, task queue, and ownership model without leaving the detail page.
+      </div>
       <div className="grid gap-3 md:grid-cols-[1fr,auto]">
         <input
           value={callNotes}
           onChange={(event) => setCallNotes(event.target.value)}
-          className="h-11 rounded-full border border-slate-300 bg-white px-4 text-sm text-slate-900"
+          className="dashboard-input rounded-full"
           placeholder="Call notes"
         />
         <Button
@@ -86,7 +89,7 @@ export function LeadActions({ branchId, leadId, ownerUserId, users }: LeadAction
         <select
           value={selectedOwner}
           onChange={(event) => setSelectedOwner(event.target.value)}
-          className="h-11 rounded-full border border-slate-300 bg-white px-4 text-sm text-slate-900"
+          className="dashboard-input rounded-full"
         >
           <option value="">Unassigned</option>
           {users.map((user) => (
@@ -118,7 +121,7 @@ export function LeadActions({ branchId, leadId, ownerUserId, users }: LeadAction
         <select
           value={taskType}
           onChange={(event) => setTaskType(event.target.value as TaskType)}
-          className="h-11 rounded-full border border-slate-300 bg-white px-4 text-sm text-slate-900"
+          className="dashboard-input rounded-full"
         >
           {taskTypeOptions.map((option) => (
             <option key={option} value={option}>
@@ -129,7 +132,7 @@ export function LeadActions({ branchId, leadId, ownerUserId, users }: LeadAction
         <select
           value={priority}
           onChange={(event) => setPriority(event.target.value as TaskPriority)}
-          className="h-11 rounded-full border border-slate-300 bg-white px-4 text-sm text-slate-900"
+          className="dashboard-input rounded-full"
         >
           {priorityOptions.map((option) => (
             <option key={option} value={option}>
@@ -140,7 +143,7 @@ export function LeadActions({ branchId, leadId, ownerUserId, users }: LeadAction
         <select
           value={assignedTo}
           onChange={(event) => setAssignedTo(event.target.value)}
-          className="h-11 rounded-full border border-slate-300 bg-white px-4 text-sm text-slate-900"
+          className="dashboard-input rounded-full"
         >
           <option value="">No assignee</option>
           {users.map((user) => (
@@ -153,12 +156,12 @@ export function LeadActions({ branchId, leadId, ownerUserId, users }: LeadAction
           type="datetime-local"
           value={dueAt}
           onChange={(event) => setDueAt(event.target.value)}
-          className="h-11 rounded-full border border-slate-300 bg-white px-4 text-sm text-slate-900"
+          className="dashboard-input rounded-full"
         />
         <input
           value={taskNotes}
           onChange={(event) => setTaskNotes(event.target.value)}
-          className="h-11 rounded-full border border-slate-300 bg-white px-4 text-sm text-slate-900 md:col-span-2"
+          className="dashboard-input rounded-full md:col-span-2"
           placeholder="Task notes"
         />
         <Button
@@ -223,8 +226,8 @@ export function LeadActions({ branchId, leadId, ownerUserId, users }: LeadAction
         </Button>
       </div>
 
-      {message ? <div className="text-sm text-emerald-700">{message}</div> : null}
-      {error ? <div className="text-sm text-rose-600">{error}</div> : null}
+      {message ? <div className="rounded-[1.15rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</div> : null}
+      {error ? <div className="rounded-[1.15rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">{error}</div> : null}
     </div>
   );
 }
