@@ -14,6 +14,10 @@ export interface WhatsAppSendResult {
   raw_response: Record<string, unknown>;
 }
 
+type WhatsAppWebhookSignatureValidation =
+  | { ok: true }
+  | { ok: false; reason: string; status: 401 | 503 };
+
 function getProviderMode(): WhatsAppProviderMode {
   if (serverEnv.WHATSAPP_PROVIDER === "cloud_api" && isWhatsAppCloudConfigured) {
     return "cloud_api";
@@ -143,30 +147,59 @@ export async function sendWhatsAppTextMessage(args: {
   } satisfies WhatsAppSendResult;
 }
 
-export function verifyWhatsAppWebhookSignature(body: string, signatureHeader: string | null) {
-  if (!serverEnv.WHATSAPP_APP_SECRET) {
-    return true;
+function shouldEnforceWhatsAppWebhookSignature() {
+  return process.env.NODE_ENV === "production" || serverEnv.WHATSAPP_PROVIDER === "cloud_api" || isWhatsAppCloudConfigured;
+}
+
+export function validateWhatsAppWebhookSignature(
+  body: string,
+  signatureHeader: string | null,
+): WhatsAppWebhookSignatureValidation {
+  if (!shouldEnforceWhatsAppWebhookSignature()) {
+    return { ok: true };
   }
 
-  if (!signatureHeader) {
-    return false;
+  if (!serverEnv.WHATSAPP_APP_SECRET) {
+    return {
+      ok: false,
+      reason: "WHATSAPP_APP_SECRET is missing, so webhook signatures cannot be verified.",
+      status: 503,
+    };
+  }
+
+  if (!signatureHeader?.startsWith("sha256=")) {
+    return {
+      ok: false,
+      reason: "Missing WhatsApp webhook signature header.",
+      status: 401,
+    };
   }
 
   const computed = `sha256=${createHmac("sha256", serverEnv.WHATSAPP_APP_SECRET).update(body).digest("hex")}`;
-  const receivedBuffer = Buffer.from(signatureHeader);
-  const computedBuffer = Buffer.from(computed);
+  const receivedBuffer = Buffer.from(signatureHeader, "utf8");
+  const computedBuffer = Buffer.from(computed, "utf8");
 
-  if (receivedBuffer.length !== computedBuffer.length) {
-    return false;
+  if (receivedBuffer.length !== computedBuffer.length || !timingSafeEqual(receivedBuffer, computedBuffer)) {
+    return {
+      ok: false,
+      reason: "Invalid WhatsApp webhook signature.",
+      status: 401,
+    };
   }
 
-  return timingSafeEqual(receivedBuffer, computedBuffer);
+  return { ok: true };
+}
+
+export function verifyWhatsAppWebhookSignature(body: string, signatureHeader: string | null) {
+  return validateWhatsAppWebhookSignature(body, signatureHeader).ok;
 }
 
 export function getWhatsAppProviderStatus() {
   return {
     mode: getProviderMode(),
     configured: isWhatsAppCloudConfigured,
+    app_secret_configured: Boolean(serverEnv.WHATSAPP_APP_SECRET),
+    webhook_signature_enforced: shouldEnforceWhatsAppWebhookSignature(),
     business_account_id: serverEnv.WHATSAPP_BUSINESS_ACCOUNT_ID ?? null,
     phone_number_id: serverEnv.WHATSAPP_PHONE_NUMBER_ID ?? null,
   };

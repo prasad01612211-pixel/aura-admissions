@@ -4,11 +4,17 @@ import { mkdir, readFile, rm, stat, writeFile } from "fs/promises";
 import { join } from "path";
 import { createInterface } from "readline";
 
+import {
+  getLeadSourceKey,
+  isLeadAtRisk,
+  isOpenTask,
+  isOverdueTask,
+} from "@/lib/data/conversion-engine-core";
 import { commitLeadImport } from "@/lib/import/parser";
 import { normalizePhoneNumber, slugifyFilename } from "@/lib/import/normalizers";
-import { readRuntimeLeadOverrides } from "@/lib/runtime/store";
+import { readRuntimeLeadOverrides, readRuntimeTasks } from "@/lib/runtime/store";
 import type { LeadImportCommitResult, LeadImportPreparedBatchRow } from "@/lib/import/types";
-import type { Campaign, Lead, LeadEvent, LeadStage, LeadStatus } from "@/types/domain";
+import type { Campaign, Lead, LeadEvent, LeadStage, LeadStatus, Task } from "@/types/domain";
 
 const importRoot = join(process.cwd(), "data", "imported", "current");
 const manifestFile = join(importRoot, "manifest.json");
@@ -27,10 +33,16 @@ export interface LocalLeadFilters {
   status?: LeadStatus;
   branch?: string;
   campaign?: string;
+  owner?: string;
+  source?: string;
   onlyHot?: boolean;
+  atRisk?: boolean;
+  unowned?: boolean;
   callbackRequested?: boolean;
   visitRequested?: boolean;
   paymentPending?: boolean;
+  overdueCallback?: boolean;
+  paymentRecovery?: boolean;
   dateFrom?: string;
   dateTo?: string;
   page?: number;
@@ -139,15 +151,23 @@ function toLocalEvent(eventRow: LeadImportPreparedBatchRow["event"], createdAt: 
   };
 }
 
-function matchesFilters(lead: Lead, filters: LocalLeadFilters) {
+function matchesFilters(lead: Lead, filters: LocalLeadFilters, taskRowsByLeadId: Map<string, Task[]>) {
+  const scopedTasks = taskRowsByLeadId.get(lead.id) ?? [];
+
   if (filters.stage && lead.stage !== filters.stage) return false;
   if (filters.status && lead.status !== filters.status) return false;
   if (filters.branch && lead.assigned_branch_id !== filters.branch && lead.preferred_branch_id !== filters.branch) return false;
   if (filters.campaign && lead.utm_campaign !== filters.campaign) return false;
+  if (filters.owner && lead.owner_user_id !== filters.owner) return false;
+  if (filters.source && getLeadSourceKey(lead) !== filters.source) return false;
   if (filters.onlyHot && lead.lead_score < 50) return false;
+  if (filters.atRisk && !isLeadAtRisk(lead)) return false;
+  if (filters.unowned && Boolean(lead.owner_user_id)) return false;
   if (filters.callbackRequested && lead.stage !== "callback_requested") return false;
   if (filters.visitRequested && lead.stage !== "visit_requested") return false;
   if (filters.paymentPending && lead.stage !== "payment_pending") return false;
+  if (filters.overdueCallback && !scopedTasks.some((task) => task.task_type === "callback" && isOverdueTask(task))) return false;
+  if (filters.paymentRecovery && !scopedTasks.some((task) => task.task_type === "payment_followup" && isOpenTask(task))) return false;
   if (filters.dateFrom && lead.created_at < new Date(filters.dateFrom).toISOString()) return false;
   if (filters.dateTo && lead.created_at > new Date(filters.dateTo).toISOString()) return false;
   return true;
@@ -170,12 +190,30 @@ function isDefaultImportedLeadFilter(filters: LocalLeadFilters, manifest: LocalI
     (!filters.status || filters.status === "new") &&
     (!filters.campaign || filters.campaign === manifest.batch_slug) &&
     !filters.branch &&
+    !filters.owner &&
+    !filters.source &&
     !filters.onlyHot &&
+    !filters.atRisk &&
+    !filters.unowned &&
     !filters.callbackRequested &&
     !filters.visitRequested &&
     !filters.paymentPending &&
+    !filters.overdueCallback &&
+    !filters.paymentRecovery &&
     !filters.dateFrom &&
     !filters.dateTo;
+}
+
+function buildTaskRowsByLeadId(taskRows: Task[]) {
+  const taskRowsByLeadId = new Map<string, Task[]>();
+
+  taskRows.forEach((task) => {
+    const current = taskRowsByLeadId.get(task.lead_id) ?? [];
+    current.push(task);
+    taskRowsByLeadId.set(task.lead_id, current);
+  });
+
+  return taskRowsByLeadId;
 }
 
 async function* readJsonLines<T>(filePath: string): AsyncGenerator<T> {
@@ -271,7 +309,8 @@ export async function getLocalImportedLeadList(filters: LocalLeadFilters): Promi
   const page = normalizePage(filters.page);
   const pageSize = normalizePageSize(filters.pageSize);
   const campaign = buildLocalCampaign(manifest);
-  const leadOverrides = await readRuntimeLeadOverrides();
+  const [leadOverrides, runtimeTaskRows] = await Promise.all([readRuntimeLeadOverrides(), readRuntimeTasks()]);
+  const taskRowsByLeadId = buildTaskRowsByLeadId(runtimeTaskRows);
 
   if (isDefaultImportedLeadFilter(filters, manifest)) {
     const importedOverrideRows = Object.values(leadOverrides).filter(
@@ -293,7 +332,7 @@ export async function getLocalImportedLeadList(filters: LocalLeadFilters): Promi
 
     for await (const lead of readJsonLines<Lead>(leadsFile)) {
       const effectiveLead = applyLeadOverride(lead, leadOverrides);
-      if (!matchesFilters(effectiveLead, { stage: "imported", status: "new", campaign: manifest.batch_slug })) {
+      if (!matchesFilters(effectiveLead, { stage: "imported", status: "new", campaign: manifest.batch_slug }, taskRowsByLeadId)) {
         continue;
       }
 
@@ -329,7 +368,7 @@ export async function getLocalImportedLeadList(filters: LocalLeadFilters): Promi
   for await (const lead of readJsonLines<Lead>(leadsFile)) {
     const effectiveLead = applyLeadOverride(lead, leadOverrides);
 
-    if (!matchesFilters(effectiveLead, filters)) {
+    if (!matchesFilters(effectiveLead, filters, taskRowsByLeadId)) {
       continue;
     }
 

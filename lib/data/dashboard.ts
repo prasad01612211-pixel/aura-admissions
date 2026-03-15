@@ -1,6 +1,7 @@
 import "server-only";
 
 import { branches, campaigns, leadEvents, leads, payments, tasks } from "@/lib/fixtures/demo-data";
+import { getConversionEngineSnapshot } from "@/lib/data/conversion-engine";
 import { isHotLead } from "@/lib/scoring/score-band";
 import { stageOrder } from "@/lib/state-machine/constants";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -75,14 +76,29 @@ function buildDashboardSnapshot(args: {
     task_queue: openTasks,
     campaigns: [...campaignRows].sort((left, right) => right.created_at.localeCompare(left.created_at)),
     branch_performance: branchPerformance,
+    conversion_engine: {
+      data_source: "fixtures",
+      source_label: "Demo seed data",
+      sla: {
+        at_risk_leads: 0,
+        overdue_callbacks: 0,
+        payment_recovery_queue: 0,
+        unowned_hot_leads: 0,
+        outreach_coverage_rate: 0,
+        median_initial_outreach_minutes: null,
+      },
+      counselor_rows: [],
+      source_rows: [],
+    },
   };
 }
 
 export async function getDashboardSnapshot() {
+  const conversionEngine = await getConversionEngineSnapshot();
   const supabase = createAdminSupabaseClient();
 
   if (!supabase) {
-    return buildDashboardSnapshot({
+    const snapshot = buildDashboardSnapshot({
       branchRows: branches,
       campaignRows: campaigns,
       leadEventRows: leadEvents,
@@ -90,6 +106,11 @@ export async function getDashboardSnapshot() {
       paymentRows: payments,
       taskRows: tasks,
     });
+
+    return {
+      ...snapshot,
+      conversion_engine: conversionEngine,
+    };
   }
 
   const [
@@ -122,7 +143,7 @@ export async function getDashboardSnapshot() {
     !paymentRows ||
     !taskRows
   ) {
-    return buildDashboardSnapshot({
+    const snapshot = buildDashboardSnapshot({
       branchRows: branches,
       campaignRows: campaigns,
       leadEventRows: leadEvents,
@@ -130,9 +151,14 @@ export async function getDashboardSnapshot() {
       paymentRows: payments,
       taskRows: tasks,
     });
+
+    return {
+      ...snapshot,
+      conversion_engine: conversionEngine,
+    };
   }
 
-  return buildDashboardSnapshot({
+  const snapshot = buildDashboardSnapshot({
     branchRows,
     campaignRows,
     leadEventRows,
@@ -140,4 +166,9 @@ export async function getDashboardSnapshot() {
     paymentRows,
     taskRows,
   });
+
+  return {
+    ...snapshot,
+    conversion_engine: conversionEngine,
+  };
 }

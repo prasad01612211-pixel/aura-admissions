@@ -3,6 +3,12 @@ import "server-only";
 import { getLeadWorkflowSnapshot } from "@/lib/admission/service";
 import { getRecommendationScopeMode, recommendBranches } from "@/lib/branch-matching/recommend";
 import { getActiveBranchProfiles } from "@/lib/data/branches";
+import {
+  getLeadSourceKey,
+  isLeadAtRisk,
+  isOpenTask,
+  isOverdueTask,
+} from "@/lib/data/conversion-engine-core";
 import { getLocalFixtureContext } from "@/lib/data/local-state";
 import {
   branches,
@@ -31,10 +37,16 @@ export interface LeadListFilters {
   status?: LeadStatus;
   branch?: string;
   campaign?: string;
+  owner?: string;
+  source?: string;
   onlyHot?: boolean;
+  atRisk?: boolean;
+  unowned?: boolean;
   callbackRequested?: boolean;
   visitRequested?: boolean;
   paymentPending?: boolean;
+  overdueCallback?: boolean;
+  paymentRecovery?: boolean;
   dateFrom?: string;
   dateTo?: string;
   page?: number;
@@ -77,16 +89,47 @@ type FilterableQuery<TQuery> = {
   lte(column: string, value: string | number): TQuery;
 };
 
-function applyFilters(sourceLeads: Lead[], filters: LeadListFilters) {
+function buildTaskRowsByLeadId(taskRows: Task[]) {
+  const taskRowsByLeadId = new Map<string, Task[]>();
+
+  taskRows.forEach((task) => {
+    const current = taskRowsByLeadId.get(task.lead_id) ?? [];
+    current.push(task);
+    taskRowsByLeadId.set(task.lead_id, current);
+  });
+
+  return taskRowsByLeadId;
+}
+
+function hasAdvancedFilters(filters: LeadListFilters) {
+  return Boolean(
+    filters.owner ||
+      filters.source ||
+      filters.atRisk ||
+      filters.unowned ||
+      filters.overdueCallback ||
+      filters.paymentRecovery,
+  );
+}
+
+function applyFilters(sourceLeads: Lead[], filters: LeadListFilters, taskRowsByLeadId = new Map<string, Task[]>()) {
   return sourceLeads.filter((lead) => {
+    const scopedTasks = taskRowsByLeadId.get(lead.id) ?? [];
+
     if (filters.stage && lead.stage !== filters.stage) return false;
     if (filters.status && lead.status !== filters.status) return false;
     if (filters.branch && lead.assigned_branch_id !== filters.branch && lead.preferred_branch_id !== filters.branch) return false;
     if (filters.campaign && lead.utm_campaign !== filters.campaign) return false;
+    if (filters.owner && lead.owner_user_id !== filters.owner) return false;
+    if (filters.source && getLeadSourceKey(lead) !== filters.source) return false;
     if (filters.onlyHot && lead.lead_score < 50) return false;
+    if (filters.atRisk && !isLeadAtRisk(lead)) return false;
+    if (filters.unowned && Boolean(lead.owner_user_id)) return false;
     if (filters.callbackRequested && lead.stage !== "callback_requested") return false;
     if (filters.visitRequested && lead.stage !== "visit_requested") return false;
     if (filters.paymentPending && lead.stage !== "payment_pending") return false;
+    if (filters.overdueCallback && !scopedTasks.some((task) => task.task_type === "callback" && isOverdueTask(task))) return false;
+    if (filters.paymentRecovery && !scopedTasks.some((task) => task.task_type === "payment_followup" && isOpenTask(task))) return false;
     if (filters.dateFrom && lead.created_at < new Date(filters.dateFrom).toISOString()) return false;
     if (filters.dateTo && lead.created_at > new Date(filters.dateTo).toISOString()) return false;
     return true;
@@ -141,6 +184,7 @@ function applySupabaseFilters<TQuery extends FilterableQuery<TQuery>>(query: TQu
   if (filters.callbackRequested) current = current.eq("stage", "callback_requested");
   if (filters.visitRequested) current = current.eq("stage", "visit_requested");
   if (filters.paymentPending) current = current.eq("stage", "payment_pending");
+  if (filters.owner) current = current.eq("owner_user_id", filters.owner);
   if (filters.dateFrom) current = current.gte("created_at", new Date(filters.dateFrom).toISOString());
   if (filters.dateTo) current = current.lte("created_at", new Date(filters.dateTo).toISOString());
 
@@ -174,7 +218,7 @@ export async function getLeadList(filters: LeadListFilters = {}): Promise<LeadLi
 
     const fixtureContext = await getLocalFixtureContext();
     const fixtureLeads = fixtureContext.leads;
-    const filteredLeads = sortLeads(applyFilters(fixtureLeads, filters));
+    const filteredLeads = sortLeads(applyFilters(fixtureLeads, filters, buildTaskRowsByLeadId(fixtureContext.tasks)));
     const paginated = paginate(filteredLeads, page, pageSize);
 
     return {
@@ -190,6 +234,40 @@ export async function getLeadList(filters: LeadListFilters = {}): Promise<LeadLi
       paymentPendingCount: filteredLeads.filter((lead) => lead.stage === "payment_pending").length,
       dataSource: "fixtures",
       sourceLabel: fixtureContext.source_label,
+    };
+  }
+
+  if (hasAdvancedFilters(filters)) {
+    const [leadResponse, taskResponse, branchResponse, campaignResponse, userResponse] = await Promise.all([
+      applySupabaseFilters(supabase.from("leads").select("*"), filters).order("updated_at", { ascending: false }),
+      supabase.from("tasks").select("*"),
+      supabase.from("branches").select("*").order("name"),
+      supabase.from("campaigns").select("*").order("created_at", { ascending: false }),
+      supabase.from("users").select("*").order("name"),
+    ]);
+
+    const filteredLeads = sortLeads(
+      applyFilters(
+        (leadResponse.data ?? []) as Lead[],
+        filters,
+        buildTaskRowsByLeadId((taskResponse.data ?? []) as Task[]),
+      ),
+    );
+    const paginated = paginate(filteredLeads, page, pageSize);
+
+    return {
+      leads: paginated.rows,
+      branches: (branchResponse.data as Branch[] | null) ?? branches,
+      campaigns: (campaignResponse.data as Campaign[] | null) ?? campaigns,
+      users: (userResponse.data as User[] | null) ?? users,
+      total: paginated.total,
+      page: paginated.page,
+      pageSize,
+      totalPages: paginated.totalPages,
+      hotCount: filteredLeads.filter((lead) => lead.lead_score >= 50).length,
+      paymentPendingCount: filteredLeads.filter((lead) => lead.stage === "payment_pending").length,
+      dataSource: "supabase",
+      sourceLabel: "Supabase",
     };
   }
 

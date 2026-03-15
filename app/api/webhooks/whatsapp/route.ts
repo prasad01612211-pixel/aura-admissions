@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { verifyWhatsAppWebhookSignature } from "@/lib/whatsapp/provider";
+import { validateWhatsAppWebhookSignature } from "@/lib/whatsapp/provider";
 import {
   getWhatsAppWebhookVerificationResponse,
   handleWhatsAppInbound,
@@ -28,9 +28,10 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const body = await request.text();
   const signature = request.headers.get("x-hub-signature-256");
+  const signatureValidation = validateWhatsAppWebhookSignature(body, signature);
 
-  if (!verifyWhatsAppWebhookSignature(body, signature)) {
-    return NextResponse.json({ error: "Invalid WhatsApp webhook signature." }, { status: 401 });
+  if (!signatureValidation.ok) {
+    return NextResponse.json({ error: signatureValidation.reason }, { status: signatureValidation.status });
   }
 
   try {

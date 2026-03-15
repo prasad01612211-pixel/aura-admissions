@@ -639,6 +639,51 @@ export interface DashboardBranchPerformance {
   capacity_available: number;
 }
 
+export interface ConversionSlaSnapshot {
+  at_risk_leads: number;
+  overdue_callbacks: number;
+  payment_recovery_queue: number;
+  unowned_hot_leads: number;
+  outreach_coverage_rate: number;
+  median_initial_outreach_minutes: number | null;
+}
+
+export interface CounselorPerformanceRow {
+  user_id: string;
+  name: string;
+  role: UserRole;
+  owned_leads: number;
+  hot_leads: number;
+  open_tasks: number;
+  overdue_tasks: number;
+  callback_tasks: number;
+  payment_followups: number;
+  stale_leads: number;
+  won_leads: number;
+  close_rate: number;
+}
+
+export interface SourcePerformanceRow {
+  source_key: string;
+  source_channel: string;
+  total_leads: number;
+  qualified_leads: number;
+  hot_leads: number;
+  payment_pending: number;
+  seat_locked: number;
+  won_leads: number;
+  avg_lead_score: number;
+  conversion_rate: number;
+}
+
+export interface ConversionEngineSnapshot {
+  data_source: AppDataSource;
+  source_label: string;
+  sla: ConversionSlaSnapshot;
+  counselor_rows: CounselorPerformanceRow[];
+  source_rows: SourcePerformanceRow[];
+}
+
 export interface PartnerBranchVerificationRow extends PartnerBranchVerification {
   import_batch_source_name?: string | null;
   existing_branch_name?: string | null;
@@ -665,6 +710,7 @@ export interface DashboardSnapshot {
   task_queue: Task[];
   campaigns: Campaign[];
   branch_performance: DashboardBranchPerformance[];
+  conversion_engine: ConversionEngineSnapshot;
 }
 
 export interface LeadScoreFactor {

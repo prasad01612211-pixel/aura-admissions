@@ -3,6 +3,7 @@ import { Database, Filter, Flame, MapPinned, UsersRound } from "lucide-react";
 
 import { DashboardPageIntro, DashboardSummaryStat } from "@/components/dashboard/page-intro";
 import { LeadStageBadge, LeadStatusBadge } from "@/components/dashboard/state-badge";
+import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getLeadList, type LeadListFilters } from "@/lib/data/leads";
@@ -26,22 +27,59 @@ export default async function LeadListPage({ searchParams }: LeadListPageProps) 
     status: getSingleValue(resolvedSearchParams.status) as LeadListFilters["status"],
     branch: getSingleValue(resolvedSearchParams.branch),
     campaign: getSingleValue(resolvedSearchParams.campaign),
+    owner: getSingleValue(resolvedSearchParams.owner),
+    source: getSingleValue(resolvedSearchParams.source),
     onlyHot: getSingleValue(resolvedSearchParams.hot) === "1",
+    atRisk: getSingleValue(resolvedSearchParams.atRisk) === "1",
+    unowned: getSingleValue(resolvedSearchParams.unowned) === "1",
     callbackRequested: getSingleValue(resolvedSearchParams.callback) === "1",
     visitRequested: getSingleValue(resolvedSearchParams.visit) === "1",
     paymentPending: getSingleValue(resolvedSearchParams.payment) === "1",
+    overdueCallback: getSingleValue(resolvedSearchParams.overdueCallback) === "1",
+    paymentRecovery: getSingleValue(resolvedSearchParams.paymentRecovery) === "1",
     dateFrom: getSingleValue(resolvedSearchParams.dateFrom),
     dateTo: getSingleValue(resolvedSearchParams.dateTo),
     page,
     pageSize: defaultPageSize,
   };
 
-  const { leads, branches, campaigns, total, page: currentPage, pageSize, totalPages, hotCount, paymentPendingCount, dataSource, sourceLabel } =
-    await getLeadList(filters);
+  const {
+    leads,
+    branches,
+    campaigns,
+    users,
+    total,
+    page: currentPage,
+    pageSize,
+    totalPages,
+    hotCount,
+    paymentPendingCount,
+    dataSource,
+    sourceLabel,
+  } = await getLeadList(filters);
   const branchLookup = new Map(branches.map((branch) => [branch.id, branch.name]));
+  const userLookup = new Map(users.map((user) => [user.id, user.name]));
   const rangeStart = total === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const rangeEnd = total === 0 ? 0 : Math.min(total, rangeStart + leads.length - 1);
   const dataSourceLabel = dataSource === "local_import" ? "Local import" : dataSource === "supabase" ? "Supabase" : "Demo seed data";
+  const activeFilters = [
+    filters.stage ? `Stage: ${humanizeToken(filters.stage)}` : null,
+    filters.status ? `Status: ${humanizeToken(filters.status)}` : null,
+    filters.branch ? `Branch: ${branchLookup.get(filters.branch) ?? "Unknown branch"}` : null,
+    filters.campaign ? `Campaign: ${filters.campaign}` : null,
+    filters.owner ? `Owner: ${userLookup.get(filters.owner) ?? "Unknown owner"}` : null,
+    filters.source ? `Source: ${filters.source}` : null,
+    filters.onlyHot ? "Hot leads" : null,
+    filters.atRisk ? "At-risk SLA" : null,
+    filters.unowned ? "Unowned only" : null,
+    filters.callbackRequested ? "Callback requested" : null,
+    filters.visitRequested ? "Visit requested" : null,
+    filters.paymentPending ? "Payment pending" : null,
+    filters.overdueCallback ? "Overdue callbacks" : null,
+    filters.paymentRecovery ? "Payment recovery" : null,
+    filters.dateFrom ? `From: ${filters.dateFrom}` : null,
+    filters.dateTo ? `To: ${filters.dateTo}` : null,
+  ].filter((value): value is string => Boolean(value));
 
   const buildPageHref = (targetPage: number) => {
     const params = new URLSearchParams();
@@ -50,10 +88,16 @@ export default async function LeadListPage({ searchParams }: LeadListPageProps) 
     if (filters.status) params.set("status", filters.status);
     if (filters.branch) params.set("branch", filters.branch);
     if (filters.campaign) params.set("campaign", filters.campaign);
+    if (filters.owner) params.set("owner", filters.owner);
+    if (filters.source) params.set("source", filters.source);
     if (filters.onlyHot) params.set("hot", "1");
+    if (filters.atRisk) params.set("atRisk", "1");
+    if (filters.unowned) params.set("unowned", "1");
     if (filters.callbackRequested) params.set("callback", "1");
     if (filters.visitRequested) params.set("visit", "1");
     if (filters.paymentPending) params.set("payment", "1");
+    if (filters.overdueCallback) params.set("overdueCallback", "1");
+    if (filters.paymentRecovery) params.set("paymentRecovery", "1");
     if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
     if (filters.dateTo) params.set("dateTo", filters.dateTo);
     if (targetPage > 1) params.set("page", String(targetPage));
@@ -148,6 +192,22 @@ export default async function LeadListPage({ searchParams }: LeadListPageProps) 
         </Card>
       </section>
 
+      {activeFilters.length > 0 ? (
+        <Card>
+          <CardContent className="flex flex-wrap items-center gap-3 px-6 py-5 sm:px-7">
+            <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-500">Active focus</div>
+            {activeFilters.map((label) => (
+              <Badge key={label} variant="neutral" className="border-slate-200/80 bg-white/80 text-slate-700">
+                {label}
+              </Badge>
+            ))}
+            <Link href="/dashboard/leads" className={buttonVariants({ variant: "outline", className: "ml-auto" })}>
+              Clear filters
+            </Link>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -161,7 +221,7 @@ export default async function LeadListPage({ searchParams }: LeadListPageProps) 
           </div>
         </CardHeader>
         <CardContent>
-          <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <label className="space-y-2 text-sm">
               <span className="text-slate-600">Stage</span>
               <select name="stage" defaultValue={filters.stage ?? ""} className="dashboard-input">
@@ -208,6 +268,21 @@ export default async function LeadListPage({ searchParams }: LeadListPageProps) 
                 ))}
               </select>
             </label>
+            <label className="space-y-2 text-sm">
+              <span className="text-slate-600">Owner</span>
+              <select name="owner" defaultValue={filters.owner ?? ""} className="dashboard-input">
+                <option value="">All owners</option>
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="space-y-2 text-sm">
+              <span className="text-slate-600">Source key</span>
+              <input name="source" defaultValue={filters.source ?? ""} placeholder="utm campaign / source" className="dashboard-input" />
+            </label>
             <div className="flex items-end gap-3">
               <button type="submit" className={buttonVariants({ className: "flex-1" })}>
                 Apply
@@ -221,6 +296,14 @@ export default async function LeadListPage({ searchParams }: LeadListPageProps) 
               Hot leads
             </label>
             <label className="dashboard-checkbox-row">
+              <input type="checkbox" name="atRisk" value="1" defaultChecked={filters.atRisk} />
+              At-risk SLA
+            </label>
+            <label className="dashboard-checkbox-row">
+              <input type="checkbox" name="unowned" value="1" defaultChecked={filters.unowned} />
+              Unowned only
+            </label>
+            <label className="dashboard-checkbox-row">
               <input type="checkbox" name="callback" value="1" defaultChecked={filters.callbackRequested} />
               Callback requested
             </label>
@@ -231,6 +314,14 @@ export default async function LeadListPage({ searchParams }: LeadListPageProps) 
             <label className="dashboard-checkbox-row">
               <input type="checkbox" name="payment" value="1" defaultChecked={filters.paymentPending} />
               Payment pending
+            </label>
+            <label className="dashboard-checkbox-row">
+              <input type="checkbox" name="overdueCallback" value="1" defaultChecked={filters.overdueCallback} />
+              Overdue callbacks
+            </label>
+            <label className="dashboard-checkbox-row">
+              <input type="checkbox" name="paymentRecovery" value="1" defaultChecked={filters.paymentRecovery} />
+              Payment recovery
             </label>
           </form>
         </CardContent>

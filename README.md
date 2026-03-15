@@ -14,6 +14,7 @@ A WhatsApp-first admissions operating system for an AP/Telangana admissions cons
 
 - Clean Next.js TypeScript project scaffold
 - Environment variable handling for Supabase, WhatsApp, and Razorpay
+- Optional HTTP Basic Auth protection for the dashboard and operator APIs
 - Strong domain and database types in `types/`
 - Initial SQL schema in `supabase/migrations/`
 - Production schema upgrade for institutions, trust, fees, attribution, payouts, and opt-ins
@@ -90,6 +91,7 @@ A WhatsApp-first admissions operating system for an AP/Telangana admissions cons
    ```
 
 For the production go-live sequence, use [DEPLOYMENT.md](/c:/Users/dell/Projects/admissions/DEPLOYMENT.md).
+For the P0 hardening sequence, use [PRODUCTION_HARDENING.md](/c:/Users/dell/Projects/admissions/PRODUCTION_HARDENING.md).
 
 ## Supabase setup
 
@@ -99,6 +101,7 @@ Apply the schema in order using the Supabase SQL editor or CLI:
 - `supabase/migrations/202603110001_production_upgrade.sql`
 - `supabase/migrations/202603110002_partner_branch_imports.sql`
 - `supabase/migrations/202603120001_live_ops_extension.sql`
+- `supabase/migrations/202603130001_narayana_hyderabad_support.sql`
 
 After the schema is live, seed demo data with:
 
@@ -139,6 +142,11 @@ For WhatsApp Cloud API, configure:
 - `WHATSAPP_PHONE_NUMBER_ID`
 - `WHATSAPP_BUSINESS_ACCOUNT_ID` (optional)
 - `WHATSAPP_GRAPH_VERSION` (defaults to `v23.0`)
+
+For dashboard and operator API protection in production, configure:
+
+- `DASHBOARD_BASIC_AUTH_USERNAME`
+- `DASHBOARD_BASIC_AUTH_PASSWORD`
 
 ## Project structure
 

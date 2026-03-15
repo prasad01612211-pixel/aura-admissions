@@ -46,6 +46,8 @@ NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
 SUPABASE_DB_URL=...
+DASHBOARD_BASIC_AUTH_USERNAME=...
+DASHBOARD_BASIC_AUTH_PASSWORD=...
 
 OPENAI_API_KEY=...
 OPENAI_BASE_URL=https://api.openai.com/v1
@@ -73,6 +75,7 @@ Recommended initial values:
 - `AI_WHATSAPP_ENABLED=false`
 - `AI_WHATSAPP_ROLLOUT_PERCENT=10`
 - `WHATSAPP_PROVIDER=cloud_api`
+- `DASHBOARD_BASIC_AUTH_USERNAME` and `DASHBOARD_BASIC_AUTH_PASSWORD` set before public rollout
 
 Turn AI on only after the deterministic flow is stable in production.
 
@@ -91,6 +94,13 @@ After deployment, confirm the app is reachable at:
 - `/dashboard`
 - `/api/system/supabase-status`
 - `/api/system/whatsapp-status`
+
+The dashboard and operator APIs support HTTP Basic Auth when these are set:
+
+- `DASHBOARD_BASIC_AUTH_USERNAME`
+- `DASHBOARD_BASIC_AUTH_PASSWORD`
+
+Enable them before public rollout so the operator console, internal analytics APIs, and mutation routes are not exposed on the open internet.
 
 ## 5. Connect WhatsApp Cloud API
 

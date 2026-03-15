@@ -2,6 +2,7 @@ import "server-only";
 
 import { getCommunicationSettings } from "@/lib/operations/settings";
 import { readRuntimeMessageEvents } from "@/lib/runtime/ops-store";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import type { Lead, LeadOptIn } from "@/types/domain";
 
 type GuardrailDecision =
@@ -15,6 +16,34 @@ function isWithinBusinessHours(now: Date, start: string, end: string) {
   const startMinutes = startHour * 60 + startMinute;
   const endMinutes = endHour * 60 + endMinute;
   return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+}
+
+async function countRecentOutboundEventsForLead(leadId: string, now: Date) {
+  const cutoffIso = new Date(now.getTime() - 60 * 1000).toISOString();
+  const supabase = createAdminSupabaseClient();
+
+  if (supabase) {
+    const { data, error } = await supabase
+      .from("message_events")
+      .select("id")
+      .eq("lead_id", leadId)
+      .eq("direction", "outbound")
+      .gte("created_at", cutoffIso);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data ?? []).length;
+  }
+
+  return (await readRuntimeMessageEvents()).filter((event) => {
+    if (event.lead_id !== leadId || event.direction !== "outbound") {
+      return false;
+    }
+
+    return new Date(event.created_at).getTime() >= now.getTime() - 60 * 1000;
+  }).length;
 }
 
 export async function evaluateWhatsAppGuardrails(args: {
@@ -50,15 +79,18 @@ export async function evaluateWhatsAppGuardrails(args: {
     };
   }
 
-  const recentEvents = (await readRuntimeMessageEvents()).filter((event) => {
-    if (event.lead_id !== args.lead.id || event.direction !== "outbound") {
-      return false;
-    }
+  let recentEventCount = 0;
+  try {
+    recentEventCount = await countRecentOutboundEventsForLead(args.lead.id, now);
+  } catch (error) {
+    return {
+      allowed: false,
+      reason: error instanceof Error ? `Unable to verify outbound rate limits: ${error.message}` : "Unable to verify outbound rate limits.",
+      sandbox_mode: settings.sandbox_mode,
+    };
+  }
 
-    return new Date(event.created_at).getTime() >= now.getTime() - 60 * 1000;
-  });
-
-  if (recentEvents.length >= settings.rate_limit_per_minute) {
+  if (recentEventCount >= settings.rate_limit_per_minute) {
     return {
       allowed: false,
       reason: "Outbound rate limit reached for the current minute.",

@@ -9,6 +9,8 @@ const publicEnvSchema = z.object({
 const serverEnvSchema = publicEnvSchema.extend({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
   SUPABASE_DB_URL: z.string().url().optional(),
+  DASHBOARD_BASIC_AUTH_USERNAME: z.string().min(1).optional(),
+  DASHBOARD_BASIC_AUTH_PASSWORD: z.string().min(1).optional(),
   OPENAI_API_KEY: z.string().min(1).optional(),
   OPENAI_BASE_URL: z.string().url().optional(),
   OPENAI_MODEL_CHAT: z.string().min(1).optional(),
@@ -40,6 +42,8 @@ export const serverEnv = serverEnvSchema.parse({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   SUPABASE_DB_URL: process.env.SUPABASE_DB_URL,
+  DASHBOARD_BASIC_AUTH_USERNAME: process.env.DASHBOARD_BASIC_AUTH_USERNAME,
+  DASHBOARD_BASIC_AUTH_PASSWORD: process.env.DASHBOARD_BASIC_AUTH_PASSWORD,
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   OPENAI_BASE_URL: process.env.OPENAI_BASE_URL,
   OPENAI_MODEL_CHAT: process.env.OPENAI_MODEL_CHAT,
@@ -65,6 +69,10 @@ export const isSupabaseConfigured = Boolean(
 
 export const isSupabaseAdminConfigured = Boolean(
   isSupabaseConfigured && serverEnv.SUPABASE_SERVICE_ROLE_KEY,
+);
+
+export const isDashboardBasicAuthConfigured = Boolean(
+  serverEnv.DASHBOARD_BASIC_AUTH_USERNAME && serverEnv.DASHBOARD_BASIC_AUTH_PASSWORD,
 );
 
 export const isWhatsAppCloudConfigured = Boolean(

@@ -10,6 +10,7 @@ import {
   WalletCards,
 } from "lucide-react";
 
+import { ConversionEnginePanel } from "@/components/dashboard/conversion-engine-panel";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { LeadStageBadge, LeadStatusBadge } from "@/components/dashboard/state-badge";
 import { Badge } from "@/components/ui/badge";
@@ -162,6 +163,8 @@ export default async function DashboardPage() {
           <MetricCard key={metric.label} metric={metric} />
         ))}
       </section>
+
+      <ConversionEnginePanel snapshot={snapshot.conversion_engine} />
 
       <section className="grid gap-6 xl:grid-cols-[1.18fr,0.82fr]">
         <Card>

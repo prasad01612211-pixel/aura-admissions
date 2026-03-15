@@ -12,6 +12,7 @@ import {
   readRuntimeConversions,
   readRuntimeVisitBookings,
 } from "@/lib/runtime/ops-store";
+import { getConversionEngineSnapshot } from "@/lib/data/conversion-engine";
 import { isHotLead } from "@/lib/scoring/score-band";
 import { stageOrder } from "@/lib/state-machine/constants";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -202,6 +203,20 @@ function buildDashboardSnapshot(args: {
     task_queue: openTasks,
     campaigns: [...campaignRows].sort((left, right) => right.created_at.localeCompare(left.created_at)),
     branch_performance: branchPerformance.sort((left, right) => right.hot_leads - left.hot_leads || right.seat_locked - left.seat_locked),
+    conversion_engine: {
+      data_source: dataSource,
+      source_label: sourceLabel,
+      sla: {
+        at_risk_leads: 0,
+        overdue_callbacks: 0,
+        payment_recovery_queue: 0,
+        unowned_hot_leads: 0,
+        outreach_coverage_rate: 0,
+        median_initial_outreach_minutes: null,
+      },
+      counselor_rows: [],
+      source_rows: [],
+    },
   };
 }
 
@@ -215,6 +230,7 @@ function filterCommissionRowsByLeadScope(args: {
 }
 
 export async function getDashboardSnapshot() {
+  const conversionEngine = await getConversionEngineSnapshot();
   const supabase = createAdminSupabaseClient();
 
   if (!supabase) {
@@ -253,7 +269,7 @@ export async function getDashboardSnapshot() {
     const leadIds = new Set(fixtureContext.leads.map((lead) => lead.id));
     const conversionRows = mergeById([...fixtureConversions, ...runtimeConversionRows]).filter((row) => leadIds.has(row.lead_id));
 
-    return buildDashboardSnapshot({
+    const snapshot = buildDashboardSnapshot({
       branchRows: fixtureContext.branches,
       campaignRows: fixtureContext.campaigns,
       commissionRows: filterCommissionRowsByLeadScope({
@@ -271,6 +287,11 @@ export async function getDashboardSnapshot() {
       totalLeadCount: fixtureContext.total_leads,
       visitRows: mergeById([...fixtureVisitBookings, ...runtimeVisitRows]).filter((row) => leadIds.has(row.lead_id)),
     });
+
+    return {
+      ...snapshot,
+      conversion_engine: conversionEngine,
+    };
   }
 
   const [
@@ -324,7 +345,7 @@ export async function getDashboardSnapshot() {
     const leadIds = new Set(fixtureContext.leads.map((lead) => lead.id));
     const conversionRowsForFixture = mergeById([...fixtureConversions, ...runtimeConversionRows]).filter((row) => leadIds.has(row.lead_id));
 
-    return buildDashboardSnapshot({
+    const snapshot = buildDashboardSnapshot({
       branchRows: fixtureContext.branches,
       campaignRows: fixtureContext.campaigns,
       commissionRows: filterCommissionRowsByLeadScope({
@@ -342,9 +363,14 @@ export async function getDashboardSnapshot() {
       totalLeadCount: fixtureContext.total_leads,
       visitRows: mergeById([...fixtureVisitBookings, ...runtimeVisitRows]).filter((row) => leadIds.has(row.lead_id)),
     });
+
+    return {
+      ...snapshot,
+      conversion_engine: conversionEngine,
+    };
   }
 
-  return buildDashboardSnapshot({
+  const snapshot = buildDashboardSnapshot({
     branchRows: branchRows as Branch[],
     campaignRows: (campaignRows as Campaign[]) ?? campaigns,
     commissionRows: (commissionRows as CommissionLedger[]) ?? [],
@@ -358,4 +384,9 @@ export async function getDashboardSnapshot() {
     totalLeadCount: (leadRows as Lead[]).length,
     visitRows: (visitRows as VisitBooking[]) ?? [],
   });
+
+  return {
+    ...snapshot,
+    conversion_engine: conversionEngine,
+  };
 }
