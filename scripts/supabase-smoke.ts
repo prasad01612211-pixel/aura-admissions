@@ -1,13 +1,30 @@
 import { config } from "dotenv";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-import { requireSupabaseAdminEnv } from "../lib/env";
 import type { Database } from "../types/database";
 
 config({ path: ".env.local", override: false });
 config({ path: ".env", override: false });
 
+const healthTables = ["institutions", "branches", "leads", "tasks"] as const;
+
+type HealthTable = (typeof healthTables)[number];
+
+async function loadTableHealth(
+  supabase: SupabaseClient<Database>,
+  table: HealthTable,
+) {
+  const { count, error } = await supabase.from(table).select("id", { count: "exact" }).limit(1);
+
+  return {
+    table,
+    count,
+    error: error?.message ?? null,
+  };
+}
+
 async function main() {
+  const { requireSupabaseAdminEnv } = await import("../lib/env");
   const { serviceRoleKey, url } = requireSupabaseAdminEnv();
   const supabase = createClient<Database>(url, serviceRoleKey, {
     auth: {
@@ -16,28 +33,18 @@ async function main() {
     },
   });
 
-  const [institutionCount, branchCount, leadCount, taskCount] = await Promise.all([
-    supabase.from("institutions").select("id", { count: "exact", head: true }),
-    supabase.from("branches").select("id", { count: "exact", head: true }),
-    supabase.from("leads").select("id", { count: "exact", head: true }),
-    supabase.from("tasks").select("id", { count: "exact", head: true }),
-  ]);
+  const results = await Promise.all(healthTables.map((table) => loadTableHealth(supabase, table)));
 
-  const firstError = institutionCount.error ?? branchCount.error ?? leadCount.error ?? taskCount.error ?? null;
+  const firstError = results.find((result) => result.error);
 
   if (firstError) {
-    throw new Error(firstError.message);
+    throw new Error(`[${firstError.table}] ${firstError.error}`);
   }
 
-  console.log("Supabase live wiring OK");
+  console.log("Supabase live read access OK");
   console.log(
     JSON.stringify(
-      {
-        institutions: institutionCount.count ?? 0,
-        branches: branchCount.count ?? 0,
-        leads: leadCount.count ?? 0,
-        tasks: taskCount.count ?? 0,
-      },
+      Object.fromEntries(results.map((result) => [result.table, result.count])),
       null,
       2,
     ),
