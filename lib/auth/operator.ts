@@ -24,6 +24,17 @@ export type OperatorSession = {
   operator: User;
 };
 
+function isMissingAuthSession(error: { name?: string; message?: string; status?: number }) {
+  const name = error.name ?? "";
+  const message = (error.message ?? "").toLowerCase();
+
+  return (
+    name === "AuthSessionMissingError" ||
+    message.includes("auth session missing") ||
+    message.includes("missing auth session")
+  );
+}
+
 async function loadOperatorByEmail(email: string) {
   const normalizedEmail = email.trim().toLowerCase();
   const adminSupabase = createAdminSupabaseClient();
@@ -91,6 +102,9 @@ export async function getOperatorSession(): Promise<OperatorSession | null> {
   } = await supabase.auth.getUser();
 
   if (error) {
+    if (isMissingAuthSession(error)) {
+      return null;
+    }
     throw new OperatorAccessError(error.message, 401);
   }
 
