@@ -132,27 +132,25 @@ export function DashboardSidebar({ authEnabled, operator }: DashboardSidebarProp
         </div>
       </div>
 
-      <aside className="dashboard-shell sticky top-4 hidden h-[calc(100vh-2rem)] w-[310px] flex-col overflow-hidden rounded-[2rem] border border-white/12 bg-[linear-gradient(180deg,rgba(8,22,36,0.98),rgba(16,37,53,0.96)_55%,rgba(13,52,68,0.92))] px-5 py-5 text-slate-100 shadow-[0_28px_80px_rgba(6,20,31,0.28)] lg:flex">
+      <aside className="dashboard-shell sticky top-4 hidden h-[calc(100vh-2rem)] w-[300px] flex-col overflow-hidden rounded-[2rem] border border-white/12 bg-[linear-gradient(180deg,rgba(8,22,36,0.98),rgba(16,37,53,0.96)_55%,rgba(13,52,68,0.92))] px-4 py-4 text-slate-100 shadow-[0_28px_80px_rgba(6,20,31,0.28)] lg:flex">
         <div className="flex h-full min-h-0 flex-col">
-          <div className="mb-6">
-          <div className="inline-flex rounded-full border border-white/10 bg-white/6 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.22em] text-[#d8bf8b]">
-            Aura Admissions
-          </div>
-          <div className="mt-3 text-[1.6rem] font-semibold leading-none tracking-[-0.06em]">Executive Ops</div>
-          <p className="mt-2 max-w-xs text-xs leading-5 text-slate-300">
-            Built for admissions teams that want premium control over intake, follow-up quality, and conversion readiness.
-          </p>
-          <div className="mt-4 rounded-[1.25rem] border border-white/10 bg-white/[0.05] p-3">
-            <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-500">Signed in</div>
-            <div className="mt-1 truncate text-base font-semibold text-white">{operator.name}</div>
-            <div className="mt-1 truncate text-xs text-slate-300">{operator.email ?? "No email configured"}</div>
-            <div className="mt-2 inline-flex rounded-full border border-white/10 bg-white/8 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#d8bf8b]">
-              {operator.role}
+          <div className="mb-4">
+            <div className="inline-flex rounded-full border border-white/10 bg-white/6 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.22em] text-[#d8bf8b]">
+              Aura Admissions
+            </div>
+            <div className="mt-2 text-xl font-semibold leading-none tracking-[-0.05em]">Executive Ops</div>
+            <div className="mt-3 flex items-center justify-between rounded-[1.1rem] border border-white/10 bg-white/[0.05] px-3 py-2">
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold text-white">{operator.name}</div>
+                <div className="truncate text-[11px] text-slate-300">{operator.email ?? "No email configured"}</div>
+              </div>
+              <div className="rounded-full border border-white/10 bg-white/8 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#d8bf8b]">
+                {operator.role}
+              </div>
             </div>
           </div>
-          </div>
 
-          <nav className="space-y-5">
+          <nav className="space-y-4">
             {navSections.map((section) => (
               <div key={section.label}>
                 <div className="mb-2 px-3 font-mono text-[10px] uppercase tracking-[0.22em] text-slate-500">{section.label}</div>
@@ -166,7 +164,7 @@ export function DashboardSidebar({ authEnabled, operator }: DashboardSidebarProp
                         key={item.href}
                         href={item.href}
                         className={cn(
-                        "group flex items-center justify-between rounded-[1.2rem] border px-3.5 py-2.5 text-xs transition-all duration-200",
+                        "group flex items-center justify-between rounded-[1.1rem] border px-3 py-2 text-[11px] transition-all duration-200",
                         active
                           ? "border-[rgba(216,191,139,0.34)] bg-[linear-gradient(135deg,rgba(216,191,139,0.18),rgba(255,255,255,0.06))] text-white shadow-[0_18px_40px_rgba(0,0,0,0.2)]"
                           : "border-transparent bg-white/[0.04] text-slate-300 hover:border-white/10 hover:bg-white/[0.08] hover:text-white",
@@ -175,11 +173,11 @@ export function DashboardSidebar({ authEnabled, operator }: DashboardSidebarProp
                       <span className="flex items-center gap-3">
                         <span
                           className={cn(
-                            "rounded-2xl p-1.5 transition-colors",
+                            "rounded-2xl p-1 transition-colors",
                             active ? "bg-black/20 text-[#f3dfb7]" : "bg-white/8 text-slate-300 group-hover:text-white",
                           )}
                         >
-                          <Icon className="h-3.5 w-3.5" />
+                          <Icon className="h-3 w-3" />
                         </span>
                         <span className="font-medium">{item.label}</span>
                       </span>
@@ -192,26 +190,7 @@ export function DashboardSidebar({ authEnabled, operator }: DashboardSidebarProp
             ))}
           </nav>
 
-          <div className="mt-auto space-y-3 pt-4">
-            <div className="rounded-[1.4rem] border border-white/10 bg-white/[0.05] p-3">
-              <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-slate-500">Current Focus</div>
-              <div className="mt-2 text-sm font-semibold text-white">Branch readiness and counselor response quality</div>
-              <p className="mt-2 text-xs leading-5 text-slate-300">
-                Keep branch, fee, and trust data clean. Everything upstream becomes easier once the operating base is reliable.
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-[1.2rem] border border-white/10 bg-white/[0.05] p-3">
-                <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500">Signal</div>
-                <div className="mt-2 text-sm font-semibold text-white">High intent</div>
-                <div className="mt-1 text-xs text-slate-300">Hot lead flow stays visible.</div>
-              </div>
-              <div className="rounded-[1.2rem] border border-white/10 bg-white/[0.05] p-3">
-                <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500">Control</div>
-                <div className="mt-2 text-sm font-semibold text-white">Human-first</div>
-                <div className="mt-1 text-xs text-slate-300">Sensitive steps stay escalated.</div>
-              </div>
-            </div>
+          <div className="mt-auto pt-3">
             {authEnabled ? (
               <LogoutButton className="border-white/10 bg-white/[0.06] text-white hover:bg-white/[0.1] hover:text-white" />
             ) : (
