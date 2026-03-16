@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { z } from "zod";
 
 import { operatorErrorResponse, requireApiOperator } from "@/lib/auth/api";
+import { log } from "@/lib/log";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 const payloadSchema = z.object({
@@ -33,10 +34,13 @@ type FeeRow = {
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  const requestId = randomUUID();
   try {
     await requireApiOperator(["admin", "operations"]);
     const payload = payloadSchema.parse(await request.json());
     const supabase = createAdminSupabaseClient();
+
+    log.info("season_refresh.start", { requestId, payload });
 
     if (!supabase) {
       return NextResponse.json({ error: "Supabase admin client is not configured." }, { status: 503 });
@@ -91,7 +95,7 @@ export async function POST(request: Request) {
     }
 
     let copiedFees = 0;
-    const archivedFees = 0;
+    let archivedFees = 0;
 
     if (payload.copyFees) {
       const [branchResponse, programResponse] = await Promise.all([
@@ -116,6 +120,8 @@ export async function POST(request: Request) {
         if (archiveError) {
           throw new Error(archiveError.message);
         }
+
+        archivedFees = programIds.length;
       }
 
       if (programIds.length > 0) {
@@ -158,6 +164,10 @@ export async function POST(request: Request) {
       archived_fees: archivedFees,
     });
   } catch (error) {
+    log.error("season_refresh.error", {
+      requestId,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return operatorErrorResponse(error, "Season refresh failed.");
   }
 }

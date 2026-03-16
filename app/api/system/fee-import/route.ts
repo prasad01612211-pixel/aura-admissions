@@ -4,6 +4,7 @@ import { z } from "zod";
 import * as XLSX from "xlsx";
 
 import { operatorErrorResponse, requireApiOperator } from "@/lib/auth/api";
+import { log } from "@/lib/log";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { feeFrequencies, feeTypes } from "@/types/operations";
 
@@ -67,6 +68,7 @@ function pickValue(row: Record<string, unknown>, keys: string[]) {
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  const requestId = randomUUID();
   try {
     await requireApiOperator(["admin", "operations"]);
     const formData = await request.formData();
@@ -74,6 +76,14 @@ export async function POST(request: Request) {
     const mode = modeSchema.parse(formData.get("mode"));
     const academicYear = academicYearSchema.parse(formData.get("academicYear"));
     const archiveExisting = boolSchema.parse(formData.get("archiveExisting"));
+
+    log.info("fee_import.start", {
+      requestId,
+      mode,
+      academicYear,
+      archiveExisting,
+      fileName: file instanceof File ? file.name : null,
+    });
 
     if (!(file instanceof File)) {
       return NextResponse.json({ error: "Attach a file in the `file` field." }, { status: 400 });
@@ -205,14 +215,16 @@ export async function POST(request: Request) {
     });
 
     if (mode === "preview") {
-      return NextResponse.json({
+      const response = {
         mode,
         total_rows: rows.length,
         valid_rows: inserts.length,
         error_rows: errors.length,
         sample_rows: inserts.slice(0, 5),
         errors,
-      });
+      };
+      log.info("fee_import.preview", { requestId, ...response });
+      return NextResponse.json(response);
     }
 
     if (errors.length > 0) {
@@ -236,12 +248,19 @@ export async function POST(request: Request) {
       throw new Error(insertError.message);
     }
 
-    return NextResponse.json({
+    const result = {
       mode,
       total_rows: rows.length,
       inserted_rows: inserts.length,
-    });
+    };
+
+    log.info("fee_import.commit", { requestId, ...result });
+    return NextResponse.json(result);
   } catch (error) {
+    log.error("fee_import.error", {
+      requestId,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return operatorErrorResponse(error, "Fee import failed.");
   }
 }
