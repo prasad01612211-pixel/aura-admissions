@@ -14,7 +14,7 @@ A WhatsApp-first admissions operating system for an AP/Telangana admissions cons
 
 - Clean Next.js TypeScript project scaffold
 - Environment variable handling for Supabase, WhatsApp, and Razorpay
-- Optional HTTP Basic Auth protection for the dashboard and operator APIs
+- Supabase Auth session protection plus role-based access control for dashboard operators
 - Strong domain and database types in `types/`
 - Initial SQL schema in `supabase/migrations/`
 - Production schema upgrade for institutions, trust, fees, attribution, payouts, and opt-ins
@@ -81,11 +81,15 @@ A WhatsApp-first admissions operating system for an AP/Telangana admissions cons
    ```bash
    npm run sync:partner-trust
    ```
-11. Import the AP/Telangana branch-master CSV into the verification queue in live Supabase:
+11. Verify operator auth users match `public.users` before deploying dashboard auth:
+   ```bash
+   npm run operators:verify
+   ```
+12. Import the AP/Telangana branch-master CSV into the verification queue in live Supabase:
    ```bash
    npm run import:partner-branches
    ```
-12. Check the WhatsApp provider status endpoint:
+13. Check the WhatsApp provider status endpoint:
    ```bash
    GET /api/system/whatsapp-status
    ```
@@ -102,6 +106,12 @@ Apply the schema in order using the Supabase SQL editor or CLI:
 - `supabase/migrations/202603110002_partner_branch_imports.sql`
 - `supabase/migrations/202603120001_live_ops_extension.sql`
 - `supabase/migrations/202603130001_narayana_hyderabad_support.sql`
+- `supabase/migrations/202603150001_api_role_grants.sql`
+- `supabase/migrations/202603150002_branch_schema_alignment.sql`
+
+The API-grants migration is required for Supabase REST/Auth-backed app access. It grants the `authenticated` and `service_role` roles access to the tables in `public` and reloads the PostgREST schema cache.
+
+The branch-alignment migration adds `google_maps_url` to `public.branches`, matching the current app and sync expectations.
 
 After the schema is live, seed demo data with:
 
@@ -143,10 +153,13 @@ For WhatsApp Cloud API, configure:
 - `WHATSAPP_BUSINESS_ACCOUNT_ID` (optional)
 - `WHATSAPP_GRAPH_VERSION` (defaults to `v23.0`)
 
-For dashboard and operator API protection in production, configure:
+For dashboard and operator API protection in production:
 
-- `DASHBOARD_BASIC_AUTH_USERNAME`
-- `DASHBOARD_BASIC_AUTH_PASSWORD`
+- create Supabase Auth users for each operator
+- make sure each auth user's email exactly matches an active row in `public.users`
+- use the `role` field in `public.users` to control access for `admin`, `operations`, `counselor`, and `finance`
+
+HTTP Basic Auth remains available only as a non-Supabase fallback for local or emergency environments.
 
 ## Project structure
 

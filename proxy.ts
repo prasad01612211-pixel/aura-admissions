@@ -1,20 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { isDashboardBasicAuthConfigured, isSupabaseConfigured, serverEnv } from "@/lib/env";
+import { updateProxySession } from "@/lib/supabase/proxy-session";
+
 const basicAuthRealm = "Admissions Ops";
 
 function isApiRequest(pathname: string) {
   return pathname.startsWith("/api/");
-}
-
-function getDashboardBasicAuthCredentials() {
-  const username = process.env.DASHBOARD_BASIC_AUTH_USERNAME?.trim();
-  const password = process.env.DASHBOARD_BASIC_AUTH_PASSWORD?.trim();
-
-  if (!username || !password) {
-    return null;
-  }
-
-  return { username, password };
 }
 
 function decodeBasicAuthHeader(headerValue: string | null) {
@@ -40,6 +32,21 @@ function decodeBasicAuthHeader(headerValue: string | null) {
 }
 
 function buildUnauthorizedResponse(request: NextRequest) {
+  if (isApiRequest(request.nextUrl.pathname)) {
+    return NextResponse.json(
+      {
+        error: "Operator authentication required.",
+      },
+      { status: 401 },
+    );
+  }
+
+  const loginUrl = new URL("/auth/login", request.url);
+  loginUrl.searchParams.set("next", request.nextUrl.pathname);
+  return NextResponse.redirect(loginUrl);
+}
+
+function buildBasicUnauthorizedResponse(request: NextRequest) {
   const headers = new Headers({
     "WWW-Authenticate": `Basic realm="${basicAuthRealm}", charset="UTF-8"`,
   });
@@ -62,10 +69,8 @@ function buildUnauthorizedResponse(request: NextRequest) {
   });
 }
 
-export function proxy(request: NextRequest) {
-  const credentials = getDashboardBasicAuthCredentials();
-
-  if (!credentials) {
+function validateBasicAuth(request: NextRequest) {
+  if (!isDashboardBasicAuthConfigured) {
     return NextResponse.next();
   }
 
@@ -73,10 +78,24 @@ export function proxy(request: NextRequest) {
 
   if (
     suppliedCredentials &&
-    suppliedCredentials.username === credentials.username &&
-    suppliedCredentials.password === credentials.password
+    suppliedCredentials.username === serverEnv.DASHBOARD_BASIC_AUTH_USERNAME &&
+    suppliedCredentials.password === serverEnv.DASHBOARD_BASIC_AUTH_PASSWORD
   ) {
     return NextResponse.next();
+  }
+
+  return buildBasicUnauthorizedResponse(request);
+}
+
+export async function proxy(request: NextRequest) {
+  if (!isSupabaseConfigured) {
+    return validateBasicAuth(request);
+  }
+
+  const { response, user } = await updateProxySession(request);
+
+  if (user) {
+    return response;
   }
 
   return buildUnauthorizedResponse(request);

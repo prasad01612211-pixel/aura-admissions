@@ -1,13 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRight, CheckCircle2, CircleDashed, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, CalendarClock, CheckCircle2, CircleDashed, ListChecks, ShieldCheck, Sparkles, UploadCloud } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { supportedPrograms } from "@/lib/operations/catalog";
+import { minimumTrustAssetCount, supportedPrograms } from "@/lib/operations/catalog";
 import type { SetupWizardSnapshot, SetupWizardStepKey } from "@/types/operations";
 
 type SetupWizardProps = {
@@ -87,6 +87,25 @@ function numberValue(value: unknown, fallback = 0) {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
+function getNextAcademicYear(value: string) {
+  const match = value.match(/^(\d{4})-(\d{2})$/);
+  if (match) {
+    const start = Number(match[1]);
+    const end = Number(match[2]);
+    if (Number.isFinite(start) && Number.isFinite(end)) {
+      return `${start + 1}-${String((end + 1) % 100).padStart(2, "0")}`;
+    }
+  }
+  const yearMatch = value.match(/^(\d{4})$/);
+  if (yearMatch) {
+    const year = Number(yearMatch[1]);
+    if (Number.isFinite(year)) {
+      return `${year + 1}`;
+    }
+  }
+  return "2027-28";
+}
+
 export function SetupWizard({ snapshot }: SetupWizardProps) {
   const router = useRouter();
   const initialStepIndex = Math.max(
@@ -99,6 +118,25 @@ export function SetupWizard({ snapshot }: SetupWizardProps) {
   const [completedSteps, setCompletedSteps] = useState<SetupWizardStepKey[]>(
     snapshot.steps.filter((step) => step.completed).map((step) => step.key),
   );
+  const [seasonYear, setSeasonYear] = useState(
+    getNextAcademicYear(snapshot.admission_cycles[0]?.academic_year ?? "2026-27"),
+  );
+  const [seasonCopyFees, setSeasonCopyFees] = useState(true);
+  const [seasonArchiveFees, setSeasonArchiveFees] = useState(true);
+  const [seasonResult, setSeasonResult] = useState<string | null>(null);
+  const [seasonLoading, setSeasonLoading] = useState(false);
+  const [feeImportFile, setFeeImportFile] = useState<File | null>(null);
+  const [feeImportPreview, setFeeImportPreview] = useState<{
+    total_rows: number;
+    valid_rows: number;
+    error_rows: number;
+    errors?: Array<{ row: number; error: string }>;
+  } | null>(null);
+  const [feeImportResult, setFeeImportResult] = useState<string | null>(null);
+  const [feeImportError, setFeeImportError] = useState<string | null>(null);
+  const [feeImportLoading, setFeeImportLoading] = useState(false);
+  const [feeImportAcademicYear, setFeeImportAcademicYear] = useState(seasonYear);
+  const [feeImportArchive, setFeeImportArchive] = useState(true);
   const [draftState, setDraftState] = useState<Record<SetupWizardStepKey, Record<string, unknown>>>(() => ({
     organization_profile: {
       public_name: snapshot.organization?.public_name ?? "",
@@ -160,6 +198,149 @@ export function SetupWizard({ snapshot }: SetupWizardProps) {
 
   const currentStep = snapshot.steps[currentStepIndex];
   const currentMeta = currentStep ? stepMeta[currentStep.key] : null;
+
+  const checklistItems = useMemo(
+    () => [
+      {
+        label: "Organization profile",
+        done: Boolean(snapshot.organization?.public_name && snapshot.organization?.primary_contact_name),
+        helper: "Public name and owner contact are set.",
+      },
+      {
+        label: "Institution contacts",
+        done: Boolean(
+          snapshot.institutions[0]?.name &&
+            (snapshot.institutions[0]?.admissions_phone ?? snapshot.institutions[0]?.contact_phone),
+        ),
+        helper: "Admissions phone is available.",
+      },
+      {
+        label: "Branches",
+        done: snapshot.branches.length > 0,
+        helper: `${snapshot.branches.length} branch records connected.`,
+      },
+      {
+        label: "Programs active",
+        done: snapshot.programs.some((program) => program.active_for_cycle),
+        helper: `${snapshot.programs.filter((program) => program.active_for_cycle).length} active programs.`,
+      },
+      {
+        label: "Fee structure",
+        done: snapshot.fee_structures.length > 0,
+        helper: `${snapshot.fee_structures.length} fee rows configured.`,
+      },
+      {
+        label: "Admission cycle",
+        done: Boolean(snapshot.admission_cycles[0]?.academic_year),
+        helper: snapshot.admission_cycles[0]?.academic_year ?? "No active academic year.",
+      },
+      {
+        label: "Trust assets",
+        done: snapshot.trust_assets.length >= minimumTrustAssetCount,
+        helper: `${snapshot.trust_assets.length} trust assets.`,
+      },
+      {
+        label: "WhatsApp controls",
+        done: Boolean(snapshot.communication_settings?.whatsapp_enabled || snapshot.communication_settings?.sandbox_mode),
+        helper: snapshot.communication_settings?.sandbox_mode ? "Sandbox mode active." : "Messaging enabled.",
+      },
+    ],
+    [snapshot],
+  );
+
+  async function runSeasonRefresh() {
+    setSeasonLoading(true);
+    setSeasonResult(null);
+    setError(null);
+    try {
+      const response = await fetch("/api/system/season-refresh", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          institutionId: snapshot.institutions[0]?.id ?? null,
+          academicYear: seasonYear,
+          copyFees: seasonCopyFees,
+          archivePreviousFees: seasonArchiveFees,
+        }),
+      });
+
+      const data = (await response.json()) as { error?: string; copied_fees?: number };
+      if (!response.ok) {
+        setSeasonResult(data.error ?? "Season refresh failed.");
+      } else {
+        setSeasonResult(`Season ${seasonYear} created. Copied fees: ${data.copied_fees ?? 0}.`);
+      }
+      router.refresh();
+    } catch (err) {
+      setSeasonResult(err instanceof Error ? err.message : "Season refresh failed.");
+    } finally {
+      setSeasonLoading(false);
+    }
+  }
+
+  function downloadFeeTemplate() {
+    const header =
+      "branch_code,program_code,academic_year,fee_type,amount,frequency,is_current,installment_available,installment_notes,scholarship_notes,refund_policy\n";
+    const sample =
+      "NAR-KPHB,MPC,2027-28,tuition,120000,yearly,true,false,,\"Scholarship for top scorers\",\"\"\n";
+    const blob = new Blob([header, sample], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "fee-import-template.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function runFeeImport(mode: "preview" | "commit") {
+    if (!feeImportFile) {
+      setFeeImportError("Choose a fee file first.");
+      return;
+    }
+    setFeeImportLoading(true);
+    setFeeImportError(null);
+    setFeeImportResult(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", feeImportFile);
+      formData.append("mode", mode);
+      formData.append("academicYear", feeImportAcademicYear);
+      formData.append("archiveExisting", String(feeImportArchive));
+
+      const response = await fetch("/api/system/fee-import", {
+        method: "POST",
+        body: formData,
+      });
+      const data = (await response.json()) as {
+        error?: string;
+        total_rows?: number;
+        valid_rows?: number;
+        error_rows?: number;
+        errors?: Array<{ row: number; error: string }>;
+        inserted_rows?: number;
+      };
+
+      if (!response.ok) {
+        setFeeImportError(data.error ?? "Fee import failed.");
+        setFeeImportPreview(data ? { total_rows: data.total_rows ?? 0, valid_rows: data.valid_rows ?? 0, error_rows: data.error_rows ?? 0, errors: data.errors } : null);
+      } else if (mode === "preview") {
+        setFeeImportPreview({
+          total_rows: data.total_rows ?? 0,
+          valid_rows: data.valid_rows ?? 0,
+          error_rows: data.error_rows ?? 0,
+          errors: data.errors,
+        });
+      } else {
+        setFeeImportResult(`Imported ${data.inserted_rows ?? 0} fee rows.`);
+        setFeeImportPreview(null);
+        router.refresh();
+      }
+    } catch (err) {
+      setFeeImportError(err instanceof Error ? err.message : "Fee import failed.");
+    } finally {
+      setFeeImportLoading(false);
+    }
+  }
 
   function updateStepField(stepKey: SetupWizardStepKey, field: string, value: unknown) {
     setDraftState((current) => ({
@@ -622,7 +803,155 @@ export function SetupWizard({ snapshot }: SetupWizardProps) {
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[320px,minmax(0,1fr)]">
+    <div className="space-y-6">
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b border-white/60 bg-[linear-gradient(180deg,rgba(255,253,249,0.92),rgba(255,248,240,0.72))]">
+          <div className="flex flex-wrap items-center gap-3">
+            <Badge variant="info">Setup actions</Badge>
+            <Badge variant="neutral">Self-serve onboarding</Badge>
+          </div>
+          <CardTitle className="mt-2 text-[1.9rem] tracking-[-0.06em] text-slate-950">
+            Actionable setup checklist and seasonal refresh tools.
+          </CardTitle>
+          <CardDescription className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+            Keep every college or consultancy consistent: confirm the fundamentals, refresh each season, and bulk load fee sheets without waiting on support.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-6 pt-6 xl:grid-cols-[1.1fr,0.9fr]">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <ListChecks className="h-4 w-4 text-teal-700" />
+              Checklist
+            </div>
+            <div className="grid gap-3">
+              {checklistItems.map((item) => (
+                <div
+                  key={item.label}
+                  className="flex items-start justify-between gap-4 rounded-[1.25rem] border border-white/70 bg-white/72 px-4 py-3 text-sm"
+                >
+                  <div>
+                    <div className="font-medium text-slate-900">{item.label}</div>
+                    <div className="mt-1 text-xs text-slate-500">{item.helper}</div>
+                  </div>
+                  <div
+                    className={`mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full border ${
+                      item.done ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white text-slate-500"
+                    }`}
+                  >
+                    {item.done ? <CheckCircle2 className="h-4 w-4" /> : <CircleDashed className="h-4 w-4" />}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-5">
+            <div className="rounded-[1.25rem] border border-white/70 bg-white/72 p-4">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                <CalendarClock className="h-4 w-4 text-amber-700" />
+                Season refresh
+              </div>
+              <div className="mt-3 text-sm text-slate-600">
+                Create the next academic year and optionally copy the current fee grid.
+              </div>
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <label className="space-y-2 text-sm">
+                  <span className="text-slate-600">Academic year</span>
+                  <input
+                    value={seasonYear}
+                    onChange={(event) => setSeasonYear(event.target.value)}
+                    className="dashboard-input"
+                  />
+                </label>
+                <label className="dashboard-checkbox-row md:col-span-2">
+                  <input
+                    type="checkbox"
+                    checked={seasonCopyFees}
+                    onChange={(event) => setSeasonCopyFees(event.target.checked)}
+                  />
+                  Copy current fee structure into the new season
+                </label>
+                <label className="dashboard-checkbox-row md:col-span-2">
+                  <input
+                    type="checkbox"
+                    checked={seasonArchiveFees}
+                    onChange={(event) => setSeasonArchiveFees(event.target.checked)}
+                  />
+                  Archive previous fees as not current
+                </label>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Button type="button" variant="secondary" onClick={runSeasonRefresh} disabled={seasonLoading}>
+                  {seasonLoading ? "Refreshing..." : "Run season refresh"}
+                </Button>
+                {seasonResult ? <div className="text-sm text-slate-600">{seasonResult}</div> : null}
+              </div>
+            </div>
+
+            <div className="rounded-[1.25rem] border border-white/70 bg-white/72 p-4">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                <UploadCloud className="h-4 w-4 text-teal-700" />
+                Bulk fee import
+              </div>
+              <div className="mt-3 text-sm text-slate-600">
+                Upload a CSV, XLS, or XLSX fee sheet for faster onboarding.
+              </div>
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <label className="space-y-2 text-sm">
+                  <span className="text-slate-600">Academic year</span>
+                  <input
+                    value={feeImportAcademicYear}
+                    onChange={(event) => setFeeImportAcademicYear(event.target.value)}
+                    className="dashboard-input"
+                  />
+                </label>
+                <label className="dashboard-checkbox-row md:col-span-2">
+                  <input
+                    type="checkbox"
+                    checked={feeImportArchive}
+                    onChange={(event) => setFeeImportArchive(event.target.checked)}
+                  />
+                  Archive previous fees when importing
+                </label>
+                <label className="space-y-2 text-sm md:col-span-2">
+                  <span className="text-slate-600">Fee file</span>
+                  <input
+                    type="file"
+                    accept=".csv,.xls,.xlsx"
+                    onChange={(event) => setFeeImportFile(event.target.files?.[0] ?? null)}
+                    className="dashboard-input file:mr-4 file:rounded-full file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-white"
+                  />
+                </label>
+              </div>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <Button type="button" variant="outline" onClick={downloadFeeTemplate}>
+                  Download template
+                </Button>
+                <Button type="button" onClick={() => runFeeImport("preview")} disabled={feeImportLoading}>
+                  {feeImportLoading ? "Checking..." : "Preview import"}
+                </Button>
+                <Button type="button" variant="secondary" onClick={() => runFeeImport("commit")} disabled={feeImportLoading}>
+                  {feeImportLoading ? "Importing..." : "Import fees"}
+                </Button>
+              </div>
+              {feeImportPreview ? (
+                <div className="mt-4 rounded-[1.15rem] border border-white/70 bg-white/78 px-4 py-3 text-sm text-slate-700">
+                  Preview: {feeImportPreview.valid_rows}/{feeImportPreview.total_rows} rows valid,{" "}
+                  {feeImportPreview.error_rows} errors.
+                </div>
+              ) : null}
+              {feeImportError ? (
+                <div className="mt-3 rounded-[1.15rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                  {feeImportError}
+                </div>
+              ) : null}
+              {feeImportResult ? <div className="mt-3 text-sm text-slate-600">{feeImportResult}</div> : null}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 xl:grid-cols-[320px,minmax(0,1fr)]">
       <Card className="h-fit overflow-hidden xl:sticky xl:top-24">
         <div className="border-b border-white/60 bg-[linear-gradient(135deg,rgba(11,27,40,0.98),rgba(19,53,69,0.92)_58%,rgba(18,83,86,0.8))]">
           <CardHeader className="space-y-4 text-white">
@@ -766,6 +1095,7 @@ export function SetupWizard({ snapshot }: SetupWizardProps) {
           {error ? <div className="rounded-[1.15rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

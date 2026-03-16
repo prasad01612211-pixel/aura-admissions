@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { operatorErrorResponse, requireApiOperator } from "@/lib/auth/api";
 import { dispatchWhatsAppCampaign } from "@/lib/whatsapp/service";
 import { whatsappTemplateNames } from "@/lib/whatsapp/templates";
 
@@ -15,6 +16,7 @@ export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
+    await requireApiOperator(["admin", "operations"]);
     const payload = requestSchema.parse(await request.json());
     const result = await dispatchWhatsAppCampaign({
       campaignId: payload.campaignId ?? null,
@@ -28,11 +30,6 @@ export async function POST(request: Request) {
       ...result,
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Unable to dispatch campaign.",
-      },
-      { status: 400 },
-    );
+    return operatorErrorResponse(error, "Unable to dispatch campaign.");
   }
 }

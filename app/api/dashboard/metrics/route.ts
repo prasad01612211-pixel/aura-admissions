@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 
+import { operatorErrorResponse, requireApiOperator } from "@/lib/auth/api";
 import { getDashboardSnapshot } from "@/lib/data/dashboard-snapshot";
 
 export const runtime = "nodejs";
 
 export async function GET() {
   try {
+    await requireApiOperator(["admin", "counselor", "operations", "finance"]);
     const snapshot = await getDashboardSnapshot();
 
     return NextResponse.json({
@@ -16,11 +18,6 @@ export async function GET() {
       hot_leads: snapshot.hot_leads.slice(0, 10),
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Unable to load dashboard metrics.",
-      },
-      { status: 500 },
-    );
+    return operatorErrorResponse(error, "Unable to load dashboard metrics.");
   }
 }

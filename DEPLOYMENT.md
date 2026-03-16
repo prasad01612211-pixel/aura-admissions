@@ -27,6 +27,12 @@ Run these SQL files in order in the production Supabase project:
 3. `supabase/migrations/202603110002_partner_branch_imports.sql`
 4. `supabase/migrations/202603120001_live_ops_extension.sql`
 5. `supabase/migrations/202603130001_narayana_hyderabad_support.sql`
+6. `supabase/migrations/202603150001_api_role_grants.sql`
+7. `supabase/migrations/202603150002_branch_schema_alignment.sql`
+
+The sixth migration is important for Supabase API visibility. It grants the `authenticated` and `service_role` roles access to the tables created by these migrations and reloads the PostgREST schema cache. Without it, API reads can fail with errors like `Could not find the table 'public.users' in the schema cache` even when the tables exist.
+
+The seventh migration aligns the live `branches` table with the app's current branch model by adding `google_maps_url`, which the production sync expects.
 
 For a real production launch, load partner and branch-side records first:
 
@@ -46,8 +52,6 @@ NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
 SUPABASE_DB_URL=...
-DASHBOARD_BASIC_AUTH_USERNAME=...
-DASHBOARD_BASIC_AUTH_PASSWORD=...
 
 OPENAI_API_KEY=...
 OPENAI_BASE_URL=https://api.openai.com/v1
@@ -75,8 +79,6 @@ Recommended initial values:
 - `AI_WHATSAPP_ENABLED=false`
 - `AI_WHATSAPP_ROLLOUT_PERCENT=10`
 - `WHATSAPP_PROVIDER=cloud_api`
-- `DASHBOARD_BASIC_AUTH_USERNAME` and `DASHBOARD_BASIC_AUTH_PASSWORD` set before public rollout
-
 Turn AI on only after the deterministic flow is stable in production.
 
 ## 4. Deploy the app
@@ -88,6 +90,7 @@ The app already has:
 - server routes under `app/api/...`
 - webhook handlers for WhatsApp and Razorpay
 - production status endpoints
+- Supabase Auth-backed operator login at `/auth/login`
 
 After deployment, confirm the app is reachable at:
 
@@ -95,12 +98,14 @@ After deployment, confirm the app is reachable at:
 - `/api/system/supabase-status`
 - `/api/system/whatsapp-status`
 
-The dashboard and operator APIs support HTTP Basic Auth when these are set:
+Before public rollout:
 
-- `DASHBOARD_BASIC_AUTH_USERNAME`
-- `DASHBOARD_BASIC_AUTH_PASSWORD`
+- create Supabase Auth users for your operators
+- make sure each auth user's email exactly matches an active row in `public.users`
+- assign the correct `role` in `public.users` for `admin`, `operations`, `counselor`, or `finance`
+- run `npm run operators:verify`
 
-Enable them before public rollout so the operator console, internal analytics APIs, and mutation routes are not exposed on the open internet.
+The dashboard and protected operator APIs now use Supabase Auth sessions plus app-level RBAC. HTTP Basic Auth remains only as a fallback when Supabase is not configured.
 
 ## 5. Connect WhatsApp Cloud API
 

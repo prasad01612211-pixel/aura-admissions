@@ -16,7 +16,8 @@
     "sync:partner-trust": "tsx scripts/sync-partner-trust.ts",
     "import:partner-branches": "tsx scripts/import-partner-branches.ts",
     "validate:narayana-hyd": "tsx scripts/validate-narayana-hyderabad.ts",
-    "ai:dry-run": "tsx --tsconfig tsconfig.scripts.json scripts/ai-whatsapp-dry-run.ts"
+    "ai:dry-run": "tsx --tsconfig tsconfig.scripts.json scripts/ai-whatsapp-dry-run.ts",
+    "operators:verify": "tsx scripts/verify-operators.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.9.0",

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { operatorErrorResponse, requireApiOperator } from "@/lib/auth/api";
 import { createWhatsAppCampaign } from "@/lib/whatsapp/service";
 import { whatsappTemplateNames } from "@/lib/whatsapp/templates";
 
@@ -15,6 +16,7 @@ export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
+    await requireApiOperator(["admin", "operations"]);
     const payload = requestSchema.parse(await request.json());
     const campaign = await createWhatsAppCampaign({
       name: payload.name,
@@ -28,11 +30,6 @@ export async function POST(request: Request) {
       campaign,
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Unable to create campaign.",
-      },
-      { status: 400 },
-    );
+    return operatorErrorResponse(error, "Unable to create campaign.");
   }
 }

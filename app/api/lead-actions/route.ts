@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { operatorErrorResponse, requireApiOperator } from "@/lib/auth/api";
 import {
   assignLeadOwner,
   createManualTask,
@@ -64,6 +65,7 @@ export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
+    const session = await requireApiOperator(["admin", "counselor", "operations"]);
     const payload = actionSchema.parse(await request.json());
 
     switch (payload.type) {
@@ -137,6 +139,15 @@ export async function POST(request: Request) {
       }
 
       case "assign_owner": {
+        if (!["admin", "operations"].includes(session.operator.role)) {
+          return NextResponse.json(
+            {
+              error: "Only admins and operations users can reassign lead ownership.",
+            },
+            { status: 403 },
+          );
+        }
+
         const lead = await assignLeadOwner({
           leadId: payload.leadId,
           ownerUserId: payload.ownerUserId ?? null,
@@ -166,11 +177,6 @@ export async function POST(request: Request) {
       }
     }
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Unable to complete lead action.",
-      },
-      { status: 400 },
-    );
+    return operatorErrorResponse(error, "Unable to complete lead action.");
   }
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { operatorErrorResponse, requireApiOperator } from "@/lib/auth/api";
 import { readRuntimeTasks, upsertRuntimeTask } from "@/lib/runtime/store";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import type { Task } from "@/types/domain";
@@ -16,6 +17,7 @@ export const runtime = "nodejs";
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
+    await requireApiOperator(["admin", "counselor", "operations"]);
     const { id } = await context.params;
     const payload = patchSchema.parse(await request.json());
     const supabase = createAdminSupabaseClient();
@@ -62,9 +64,6 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
 
     return NextResponse.json({ ok: true, task: nextTask });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to update the task." },
-      { status: 400 },
-    );
+    return operatorErrorResponse(error, "Unable to update the task.");
   }
 }

@@ -2,9 +2,11 @@ import { Activity, Megaphone, MessageSquareReply, Target } from "lucide-react";
 
 import { DashboardPageIntro, DashboardSummaryStat } from "@/components/dashboard/page-intro";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { requireDashboardOperator } from "@/lib/auth/operator";
 import { getCampaignAnalyticsSnapshot } from "@/lib/data/analytics";
 
 export default async function CampaignAnalyticsPage() {
+  await requireDashboardOperator(["admin", "operations"]);
   const snapshot = await getCampaignAnalyticsSnapshot();
   const totalTargets = snapshot.rows.reduce((sum, row) => sum + row.target_count, 0);
   const totalReplies = snapshot.rows.reduce((sum, row) => sum + row.reply_count, 0);

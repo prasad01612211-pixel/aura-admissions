@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 
+import { operatorErrorResponse, requireApiOperator } from "@/lib/auth/api";
 import { getConversionEngineSnapshot } from "@/lib/data/conversion-engine";
 
 export const runtime = "nodejs";
 
 export async function GET() {
   try {
+    await requireApiOperator(["admin", "counselor", "operations", "finance"]);
     const snapshot = await getConversionEngineSnapshot();
 
     return NextResponse.json({
@@ -13,11 +15,6 @@ export async function GET() {
       ...snapshot,
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Unable to load conversion engine metrics.",
-      },
-      { status: 500 },
-    );
+    return operatorErrorResponse(error, "Unable to load conversion engine metrics.");
   }
 }

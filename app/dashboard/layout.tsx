@@ -1,12 +1,14 @@
+import { requireDashboardOperator } from "@/lib/auth/operator";
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { Badge } from "@/components/ui/badge";
-import { isSupabaseAdminConfigured, isSupabaseConfigured } from "@/lib/env";
+import { isSupabaseConfigured } from "@/lib/env";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await requireDashboardOperator();
   const formattedDate = new Intl.DateTimeFormat("en-IN", {
     day: "2-digit",
     month: "short",
@@ -16,7 +18,7 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen px-4 py-4 lg:px-6">
       <div className="mx-auto flex max-w-[1720px] flex-col gap-4 lg:flex-row">
-        <DashboardSidebar />
+        <DashboardSidebar authEnabled={isSupabaseConfigured} operator={session.operator} />
         <main className="dashboard-shell min-h-screen flex-1 overflow-hidden rounded-[2rem] border border-white/50 bg-[rgba(255,252,247,0.62)] shadow-[0_28px_90px_rgba(17,32,49,0.12)] backdrop-blur-xl">
           <header className="border-b border-[rgba(17,32,49,0.08)] bg-[linear-gradient(180deg,rgba(255,252,247,0.88),rgba(255,252,247,0.68))] px-6 py-6 backdrop-blur lg:px-10">
             <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
@@ -39,10 +41,10 @@ export default function DashboardLayout({
                   </div>
                 </div>
                 <div className="rounded-[1.35rem] border border-white/60 bg-white/60 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-                  <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-500">Admin access</div>
+                  <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-500">Operator role</div>
                   <div className="mt-2">
-                    <Badge variant={isSupabaseAdminConfigured ? "info" : "danger"}>
-                      {isSupabaseAdminConfigured ? "Service role active" : "Admin key missing"}
+                    <Badge variant="info">
+                      {session.operator.role}
                     </Badge>
                   </div>
                 </div>

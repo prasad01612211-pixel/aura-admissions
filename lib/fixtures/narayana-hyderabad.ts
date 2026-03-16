@@ -301,9 +301,10 @@ function buildBranchRecord(entry: NarayanaHyderabadSeedBranch, index: number): B
 export const narayanaHyderabadBranchProfiles: BranchProfile[] = narayanaHyderabadDataset.map(buildBranchRecord);
 
 export const narayanaHyderabadBranches: Branch[] = narayanaHyderabadBranchProfiles.map((branch) => {
-  const { assets, highlights, ...branchRow } = branch;
+  const { assets, highlights, trust_score, ...branchRow } = branch;
   void assets;
   void highlights;
+  void trust_score;
   return branchRow;
 });
 

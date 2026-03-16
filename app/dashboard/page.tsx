@@ -18,6 +18,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { getDashboardSnapshot } from "@/lib/data/dashboard-snapshot";
 import { getLeadDisplayName, humanizeToken } from "@/lib/utils";
 
+type DashboardPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+function getSingleValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 function formatEventTimestamp(value: string) {
   const date = new Date(value);
 
@@ -33,7 +41,9 @@ function formatEventTimestamp(value: string) {
   }).format(date);
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
+  const resolvedSearchParams = (await searchParams) ?? {};
+  const accessWarning = getSingleValue(resolvedSearchParams.access) === "forbidden";
   const snapshot = await getDashboardSnapshot();
   const totalStageCount = snapshot.stage_counts.reduce((sum, item) => sum + item.count, 0);
   const topStageMix = [...snapshot.stage_counts].sort((left, right) => right.count - left.count).slice(0, 5);
@@ -64,6 +74,14 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {accessWarning ? (
+        <Card className="border-amber-200/80 bg-[rgba(245,158,11,0.08)]">
+          <CardContent className="px-6 py-4 text-sm leading-6 text-amber-900">
+            Your account is signed in, but that page requires a higher permission level. You have been returned to the main dashboard.
+          </CardContent>
+        </Card>
+      ) : null}
+
       <section className="grid gap-6 xl:grid-cols-[1.45fr,0.95fr]">
         <Card className="overflow-hidden border-[rgba(179,132,67,0.18)] bg-[linear-gradient(135deg,rgba(11,27,40,0.96),rgba(19,53,69,0.92)_56%,rgba(19,91,91,0.82))] text-white shadow-[0_28px_90px_rgba(8,24,38,0.24)]">
           <CardHeader className="pb-5">

@@ -2,9 +2,11 @@ import { ClipboardCheck, MessageSquareText, Network, ShieldCheck } from "lucide-
 
 import { DashboardPageIntro, DashboardSummaryStat } from "@/components/dashboard/page-intro";
 import { SetupWizard } from "@/components/setup/setup-wizard";
+import { requireDashboardOperator } from "@/lib/auth/operator";
 import { getSetupWizardSnapshot } from "@/lib/operations/setup";
 
 export default async function SetupPage() {
+  await requireDashboardOperator(["admin", "operations"]);
   const snapshot = await getSetupWizardSnapshot();
   const completedSteps = snapshot.steps.filter((step) => step.completed).length;
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { operatorErrorResponse, requireApiOperator } from "@/lib/auth/api";
 import { getSetupWizardSnapshot, publishSetupWizard, saveSetupWizardDraft } from "@/lib/operations/setup";
 import { setupWizardStepKeys } from "@/types/operations";
 
@@ -21,37 +22,38 @@ const publishSchema = z.object({
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const snapshot = await getSetupWizardSnapshot({
-    organizationId: searchParams.get("organizationId") ?? undefined,
-    institutionId: searchParams.get("institutionId") ?? undefined,
-  });
+  try {
+    await requireApiOperator(["admin", "operations"]);
+    const { searchParams } = new URL(request.url);
+    const snapshot = await getSetupWizardSnapshot({
+      organizationId: searchParams.get("organizationId") ?? undefined,
+      institutionId: searchParams.get("institutionId") ?? undefined,
+    });
 
-  return NextResponse.json(snapshot);
+    return NextResponse.json(snapshot);
+  } catch (error) {
+    return operatorErrorResponse(error, "Unable to load setup wizard.");
+  }
 }
 
 export async function POST(request: Request) {
   try {
+    await requireApiOperator(["admin", "operations"]);
     const payload = saveSchema.parse(await request.json());
     const draft = await saveSetupWizardDraft(payload);
     return NextResponse.json({ ok: true, draft });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to save setup draft." },
-      { status: 400 },
-    );
+    return operatorErrorResponse(error, "Unable to save setup draft.");
   }
 }
 
 export async function PATCH(request: Request) {
   try {
+    await requireApiOperator(["admin", "operations"]);
     const payload = publishSchema.parse(await request.json());
     const draft = await publishSetupWizard(payload);
     return NextResponse.json({ ok: true, draft });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to publish setup." },
-      { status: 400 },
-    );
+    return operatorErrorResponse(error, "Unable to publish setup.");
   }
 }

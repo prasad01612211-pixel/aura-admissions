@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { operatorErrorResponse, requireApiOperator } from "@/lib/auth/api";
 import { getTaskQueueSnapshot } from "@/lib/data/tasks";
 import type { TaskPriority, TaskStatus } from "@/types/domain";
 
@@ -7,6 +8,7 @@ export const runtime = "nodejs";
 
 export async function GET(request: Request) {
   try {
+    await requireApiOperator(["admin", "counselor", "operations", "finance"]);
     const { searchParams } = new URL(request.url);
     const snapshot = await getTaskQueueSnapshot({
       assignedTo: searchParams.get("assignedTo") ?? undefined,
@@ -19,11 +21,6 @@ export async function GET(request: Request) {
       ...snapshot,
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Unable to load task queue.",
-      },
-      { status: 500 },
-    );
+    return operatorErrorResponse(error, "Unable to load task queue.");
   }
 }

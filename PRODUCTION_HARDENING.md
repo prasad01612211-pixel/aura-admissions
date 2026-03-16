@@ -8,8 +8,9 @@ This is the repo-specific `P0` checklist to move the product from a strong inter
 - [x] Support HTTP Basic Auth through:
   - `DASHBOARD_BASIC_AUTH_USERNAME`
   - `DASHBOARD_BASIC_AUTH_PASSWORD`
-- [ ] Turn Basic Auth on in Vercel production before public rollout.
-- [ ] Replace Basic Auth with real Supabase Auth + RBAC for `admin`, `operations`, `counselor`, and `finance`.
+- [x] Replace Basic Auth with real Supabase Auth + RBAC for `admin`, `operations`, `counselor`, and `finance`.
+- [ ] Create production Supabase Auth users for every operator and match each auth email to an active row in `public.users`.
+- [ ] Review role assignments in `public.users` before go-live.
 
 Protected surfaces in the current patch:
 
@@ -55,7 +56,7 @@ Protected surfaces in the current patch:
 ## 6. Audit and compliance
 
 - [ ] Write immutable audit rows for operator mutations: setup changes, lead actions, task edits, visit edits, campaign sends, imports, and payout changes.
-- [ ] Add actor identity once real auth is in place.
+- [x] Expose authenticated operator identity to the app layer so audit logging can attribute future mutations correctly.
 - [ ] Document consent evidence, retention, and delete/export workflows for lead data.
 
 ## 7. Conversion engine instrumentation
@@ -68,7 +69,7 @@ Protected surfaces in the current patch:
 ## Safe production command order
 
 1. Apply Supabase migrations manually in order.
-2. Set production env vars, including Basic Auth and webhook secrets.
+2. Set production env vars and webhook secrets.
 3. Run:
    - `npm run supabase:smoke`
    - `npm run sync:partner-trust`
@@ -87,4 +88,4 @@ Protected surfaces in the current patch:
 
 - WhatsApp webhook POSTs no longer pass when signature verification cannot be enforced.
 - Outbound guardrails now check live Supabase message events instead of only local runtime files.
-- The repo now supports a production-safe access shield for the dashboard and operator APIs without forcing a full auth rewrite first.
+- The repo now supports Supabase Auth-backed operator login plus explicit RBAC checks across dashboard pages and protected APIs.

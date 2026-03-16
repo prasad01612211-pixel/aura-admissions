@@ -15,7 +15,9 @@ import {
   Route,
 } from "lucide-react";
 
+import { LogoutButton } from "@/components/auth/logout-button";
 import { cn } from "@/lib/utils";
+import type { User } from "@/types/domain";
 
 type NavItem = {
   href: string;
@@ -65,7 +67,12 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function DashboardSidebar() {
+type DashboardSidebarProps = {
+  authEnabled: boolean;
+  operator: Pick<User, "name" | "role" | "email">;
+};
+
+export function DashboardSidebar({ authEnabled, operator }: DashboardSidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -83,9 +90,22 @@ export function DashboardSidebar() {
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/8 px-3 py-2 text-right">
-              <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-400">Mode</div>
-              <div className="mt-1 text-sm font-semibold text-white">Live Ops</div>
+              <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-400">Signed in</div>
+              <div className="mt-1 text-sm font-semibold text-white">{operator.role}</div>
             </div>
+          </div>
+          <div className="mt-4 flex items-center justify-between gap-3 rounded-[1.2rem] border border-white/10 bg-white/[0.05] px-4 py-3">
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold text-white">{operator.name}</div>
+              <div className="truncate text-xs text-slate-300">{operator.email ?? "No email"}</div>
+            </div>
+            {authEnabled ? (
+              <LogoutButton compact className="border-white/15 bg-white/8 text-white hover:bg-white/12 hover:text-white" />
+            ) : (
+              <div className="rounded-full border border-white/10 bg-white/8 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-300">
+                Local mode
+              </div>
+            )}
           </div>
           <nav className="-mx-1 mt-5 flex gap-2 overflow-x-auto px-1 pb-1">
             {mobileNavItems.map((item) => {
@@ -121,6 +141,14 @@ export function DashboardSidebar() {
           <p className="mt-3 max-w-xs text-sm leading-6 text-slate-300">
             Built for admissions teams that want premium control over intake, follow-up quality, and conversion readiness.
           </p>
+          <div className="mt-5 rounded-[1.45rem] border border-white/10 bg-white/[0.05] p-4">
+            <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-500">Signed in</div>
+            <div className="mt-2 truncate text-lg font-semibold text-white">{operator.name}</div>
+            <div className="mt-1 truncate text-sm text-slate-300">{operator.email ?? "No email configured"}</div>
+            <div className="mt-3 inline-flex rounded-full border border-white/10 bg-white/8 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-[#d8bf8b]">
+              {operator.role}
+            </div>
+          </div>
         </div>
 
         <nav className="space-y-6">
@@ -183,6 +211,13 @@ export function DashboardSidebar() {
               <div className="mt-1 text-sm text-slate-300">Sensitive steps stay escalated.</div>
             </div>
           </div>
+          {authEnabled ? (
+            <LogoutButton className="border-white/10 bg-white/[0.06] text-white hover:bg-white/[0.1] hover:text-white" />
+          ) : (
+            <div className="rounded-[1.2rem] border border-white/10 bg-white/[0.05] px-4 py-3 text-center text-sm text-slate-300">
+              Local fallback mode is active. Supabase Auth sign-out is unavailable.
+            </div>
+          )}
         </div>
       </aside>
     </>

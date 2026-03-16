@@ -1,7 +1,6 @@
 import { config } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 
-import { requireSupabaseAdminEnv } from "../lib/env";
 import { syncPartnerTrustSeedData } from "../lib/supabase/live-sync";
 import type { Database } from "../types/database";
 
@@ -10,6 +9,7 @@ config({ path: ".env", override: false });
 
 async function main() {
   const args = process.argv.slice(2);
+  const { requireSupabaseAdminEnv } = await import("../lib/env");
   const { serviceRoleKey, url } = requireSupabaseAdminEnv();
   const supabase = createClient<Database>(url, serviceRoleKey, {
     auth: {

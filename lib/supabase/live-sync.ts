@@ -122,7 +122,30 @@ function buildPartnerTrustTableRows(options: PartnerTrustSyncOptions) {
     .filter((table) => enabledTables.has(table))
     .map((table) => ({
       table,
-      rows: seedData[table] as TableInsert<typeof table>[],
+      rows:
+        table === "branches"
+          ? ((seedData[table] as TableInsert<"branches">[]).map((row) => {
+              const normalizedRow: TableInsert<"branches"> = {
+                ...row,
+                locality: row.locality ?? null,
+                state: row.state ?? null,
+                pilot_scope: row.pilot_scope ?? null,
+                geo_cluster: row.geo_cluster ?? null,
+                groups_available: row.groups_available ?? [],
+                photos_json: row.photos_json ?? { items: [] },
+                reviews_json: row.reviews_json ?? { items: [] },
+                trust_assets_json: row.trust_assets_json ?? {},
+                verification_status: row.verification_status ?? "pending",
+                verification_notes: row.verification_notes ?? null,
+                google_maps_url: row.google_maps_url ?? null,
+                contact_phone: row.contact_phone ?? null,
+                contact_email: row.contact_email ?? null,
+                boys_hostel: row.boys_hostel ?? false,
+                girls_hostel: row.girls_hostel ?? false,
+              };
+              return normalizedRow;
+            }) as TableInsert<typeof table>[])
+          : (seedData[table] as TableInsert<typeof table>[]),
     }));
 }
 

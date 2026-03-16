@@ -3,10 +3,12 @@ import { IndianRupee, Landmark, ReceiptText, Wallet } from "lucide-react";
 import { DashboardPageIntro } from "@/components/dashboard/page-intro";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { requireDashboardOperator } from "@/lib/auth/operator";
 import { getRevenueSnapshot } from "@/lib/data/revenue";
 import { formatCurrency, formatDateTime, humanizeToken } from "@/lib/utils";
 
 export default async function RevenuePage() {
+  await requireDashboardOperator(["admin", "finance"]);
   const snapshot = await getRevenueSnapshot();
 
   return (

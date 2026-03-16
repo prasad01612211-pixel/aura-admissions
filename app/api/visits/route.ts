@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { operatorErrorResponse, requireApiOperator } from "@/lib/auth/api";
 import { createVisitBooking, updateVisitBooking } from "@/lib/operations/visits";
 import { visitBookingStatuses, visitOutcomeStatuses } from "@/types/operations";
 
@@ -24,6 +25,7 @@ export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
+    await requireApiOperator(["admin", "counselor", "operations"]);
     const payload = createSchema.parse(await request.json());
     const booking = await createVisitBooking({
       lead_id: payload.leadId,
@@ -35,15 +37,13 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true, booking });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to create visit booking." },
-      { status: 400 },
-    );
+    return operatorErrorResponse(error, "Unable to create visit booking.");
   }
 }
 
 export async function PATCH(request: Request) {
   try {
+    await requireApiOperator(["admin", "counselor", "operations"]);
     const payload = patchSchema.parse(await request.json());
     const booking = await updateVisitBooking({
       id: payload.id,
@@ -55,9 +55,6 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({ ok: true, booking });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to update visit booking." },
-      { status: 400 },
-    );
+    return operatorErrorResponse(error, "Unable to update visit booking.");
   }
 }
