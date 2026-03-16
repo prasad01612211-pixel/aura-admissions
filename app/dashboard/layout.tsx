@@ -17,7 +17,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen px-4 py-4 lg:px-6">
-      <div className="mx-auto flex max-w-[1720px] flex-col gap-4 lg:flex-row">
+      <div className="mx-auto flex w-full max-w-[1920px] flex-col gap-4 lg:flex-row 2xl:max-w-[2240px]">
         <DashboardSidebar authEnabled={isSupabaseConfigured} operator={session.operator} />
         <main className="dashboard-shell min-h-screen flex-1 overflow-hidden rounded-[2rem] border border-white/50 bg-[rgba(255,252,247,0.62)] shadow-[0_28px_90px_rgba(17,32,49,0.12)] backdrop-blur-xl">
           <header className="border-b border-[rgba(17,32,49,0.08)] bg-[linear-gradient(180deg,rgba(255,252,247,0.88),rgba(255,252,247,0.68))] px-6 py-6 backdrop-blur lg:px-10">
